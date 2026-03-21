@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Dashboard — TeleAgent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#050510;--card:#0a0a1f;--border:rgba(123,97,255,0.12);--purple:#7B61FF;--cyan:#00D4FF;--text:#e8e8ff;--muted:#4a4a7a;--red:#ff4444;--green:#00ff88;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden;}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(123,97,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(123,97,255,0.025) 1px,transparent 1px);background-size:50px 50px;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(5,5,16,0.97);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.1em;display:flex;align-items:center;gap:8px;}
+.logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.plan-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.badge-free{background:rgba(74,74,122,0.2);color:var(--muted);border:1px solid rgba(74,74,122,0.3);}
+.badge-pro{background:rgba(123,97,255,0.12);color:var(--purple);border:1px solid rgba(123,97,255,0.25);}
+.nav-user{font-size:13px;font-weight:600;}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--muted);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:all 0.2s;}
+.logout-btn:hover{border-color:rgba(255,68,68,0.4);color:var(--red);}
+
+.main{position:fixed;top:56px;bottom:60px;left:0;right:0;overflow-y:auto;z-index:1;}
+.main::-webkit-scrollbar{display:none;}
+
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:100;height:60px;display:flex;background:rgba(5,5,16,0.98);border-top:1px solid var(--border);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.04em;-webkit-tap-highlight-color:transparent;transition:color 0.2s;}
+.tab-btn.active{color:var(--purple);}
+.tab-btn.active svg{stroke:var(--purple);}
+
+.panel{display:none;padding:16px;max-width:600px;margin:0 auto;padding-bottom:20px;}
+.panel.active{display:block;}
+
+/* AGENT CARD */
+.agent-hero{background:linear-gradient(135deg,rgba(123,97,255,0.08),rgba(0,212,255,0.04));border:1px solid rgba(123,97,255,0.2);border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;}
+.agent-status-icon{width:72px;height:72px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;}
+.status-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;}
+.status-ring.active{border-color:var(--green);box-shadow:0 0 20px rgba(0,255,136,0.3);animation:ringPulse 2s ease-in-out infinite;}
+.status-ring.inactive{border-color:var(--muted);}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 10px rgba(0,255,136,0.2);}50%{box-shadow:0 0 30px rgba(0,255,136,0.5);}}
+.agent-name{font-size:18px;font-weight:700;margin-bottom:4px;}
+.agent-status-text{font-size:12px;margin-bottom:16px;}
+.status-active{color:var(--green);}
+.status-inactive{color:var(--muted);}
+.agent-toggle{padding:14px 40px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.06em;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+.toggle-start{background:linear-gradient(135deg,var(--green),#00cc70);color:#000;}
+.toggle-stop{background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);color:var(--red);}
+.agent-toggle:active{opacity:0.8;}
+.agent-toggle:disabled{opacity:0.4;}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+.stat-mini{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;text-align:center;}
+.stat-mini-num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--purple);}
+.stat-mini-label{font-size:10px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
+
+/* CONNECT CARD */
+.section-label{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;margin-top:4px;}
+.connect-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.step-indicator{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.step{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.step.done{background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;}
+.step.active{background:rgba(123,97,255,0.15);border:2px solid var(--purple);color:var(--purple);}
+.step.pending{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);}
+.step-line{flex:1;height:1px;background:var(--border);}
+
+.form-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.form-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;margin-bottom:12px;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(123,97,255,0.5);}
+.form-input::placeholder{color:var(--muted);}
+.form-hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.action-btn{padding:13px 24px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.action-btn:active{opacity:0.8;}
+.action-btn:disabled{opacity:0.4;}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#9b85ff);color:#fff;}
+.btn-cyan{background:linear-gradient(135deg,var(--cyan),#00a8cc);color:#000;}
+.btn-full{width:100%;justify-content:center;}
+
+/* SETTINGS */
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.toggle-row:last-of-type{border-bottom:none;}
+.toggle-label{font-size:14px;font-weight:600;}
+.toggle-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.toggle-switch{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle-switch.on{background:var(--purple);border-color:var(--purple);}
+.toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.2s;}
+.toggle-switch.on::after{transform:translateX(20px);}
+textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
+
+/* LOGS */
+.log-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.log-item:last-child{border-bottom:none;}
+.log-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:rgba(123,97,255,0.1);}
+.log-info{flex:1;min-width:0;}
+.log-chat{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:3px;}
+.log-incoming{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.log-reply{font-size:13px;color:var(--text);line-height:1.4;}
+.log-time{font-size:10px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.loading{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(60px);background:#0a0a1f;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;transition:transform 0.3s;z-index:300;white-space:nowrap;max-width:88vw;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(0,255,136,0.3);color:var(--green);}
+.toast.error{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    TELEAGENT
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser">...</span>
+    <span class="plan-badge badge-free" id="navBadge">FREE</span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main" id="main">
+
+  <!-- AGENT PANEL -->
+  <div class="panel active" id="panelAgent">
+    <div style="height:14px;"></div>
+
+    <div class="agent-hero">
+      <div class="agent-status-icon" id="agentIcon">
+        <div class="status-ring inactive" id="statusRing"></div>
+        🤖
+      </div>
+      <div class="agent-name" id="agentName">TeleAgent</div>
+      <div class="agent-status-text status-inactive" id="agentStatusText">● Offline — not running</div>
+      <button class="agent-toggle toggle-start" id="agentToggleBtn" onclick="toggleAgent()" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Start Agent
+      </button>
+      <div class="stats-row">
+        <div class="stat-mini"><div class="stat-mini-num" id="statReplies">0</div><div class="stat-mini-label">Replies</div></div>
+        <div class="stat-mini"><div class="stat-mini-num" id="statChats">0</div><div class="stat-mini-label">Chats</div></div>
+        <div class="stat-mini"><div class="stat-mini-num" id="statUptime">—</div><div class="stat-mini-label">Status</div></div>
+      </div>
+    </div>
+
+    <!-- Connect section -->
+    <div id="connectSection">
+      <div class="section-label">Connect Telegram Account</div>
+      <div class="connect-card">
+        <div class="step-indicator">
+          <div class="step active" id="step1">1</div>
+          <div class="step-line"></div>
+          <div class="step pending" id="step2">2</div>
+          <div class="step-line"></div>
+          <div class="step pending" id="step3">3</div>
+        </div>
+
+        <!-- Step 1: Phone -->
+        <div id="stepPhone">
+          <div class="form-label">Telegram Phone Number</div>
+          <input type="tel" class="form-input" id="phoneInput" placeholder="+2348012345678"/>
+          <div class="form-hint">Include country code. A verification code will be sent to your Telegram app.</div>
+          <button class="action-btn btn-purple btn-full" id="sendCodeBtn" onclick="sendCode()">
+            SEND VERIFICATION CODE
+          </button>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div id="stepOTP" style="display:none;">
+          <div class="form-label">Enter Verification Code</div>
+          <input type="text" class="form-input" id="otpInput" placeholder="12345" maxlength="5" style="letter-spacing:0.2em;font-size:20px;text-align:center;font-family:'JetBrains Mono',monospace;"/>
+          <div class="form-hint" id="otpHint">Check your Telegram app for the code.</div>
+          <!-- 2FA field (hidden by default) -->
+          <div id="twoFASection" style="display:none;">
+            <div class="form-label">Two-Factor Password</div>
+            <input type="password" class="form-input" id="twoFAInput" placeholder="Your 2FA password"/>
+          </div>
+          <button class="action-btn btn-cyan btn-full" id="verifyBtn" onclick="verifyCode()">
+            VERIFY & CONNECT
+          </button>
+          <button style="width:100%;padding:10px;margin-top:8px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;" onclick="resetConnect()">← Change Number</button>
+        </div>
+
+        <!-- Step 3: Connected -->
+        <div id="stepConnected" style="display:none;text-align:center;">
+          <div style="font-size:48px;margin-bottom:12px;">✅</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px;" id="connectedName">Connected!</div>
+          <div style="font-size:13px;color:var(--muted);">Your agent is ready. Go to settings to configure it then start it above.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panelSettings">
+    <div style="height:14px;"></div>
+    <div class="section-label">AI Personality</div>
+    <div class="settings-card">
+      <div class="form-label">Agent Name</div>
+      <input type="text" class="form-input" id="settAgentName" placeholder="e.g. John (your name)"/>
+      <div class="form-label">Personality Prompt</div>
+      <textarea class="form-input" id="settPersonality" placeholder="Describe how the agent should reply. e.g. 'You are John, admin of a crypto trading group. Be friendly, professional and always encourage members. Reply in Nigerian/English. Never reveal you are AI.'"></textarea>
+      <div class="form-hint">The more detailed you make this, the more it sounds like you.</div>
+    </div>
+
+    <div class="section-label">What To Reply</div>
+    <div class="settings-card">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Reply to Groups</div>
+          <div class="toggle-sub">Agent replies in group chats</div>
+        </div>
+        <div class="toggle-switch on" id="toggleGroups" onclick="toggleSwitch('toggleGroups')"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Reply to DMs</div>
+          <div class="toggle-sub">Agent replies to private messages</div>
+        </div>
+        <div class="toggle-switch on" id="toggleDMs" onclick="toggleSwitch('toggleDMs')"></div>
+      </div>
+    </div>
+
+    <button class="action-btn btn-purple btn-full" style="margin-top:4px;" onclick="saveSettings()">SAVE SETTINGS</button>
+  </div>
+
+  <!-- LOGS PANEL -->
+  <div class="panel" id="panelLogs">
+    <div style="height:14px;"></div>
+    <div class="section-label">Message History</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;" id="logsList">
+      <div class="loading">Loading logs...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-tabs">
+  <button class="tab-btn active" id="tabAgent" onclick="switchTab('Agent')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    AGENT
+  </button>
+  <button class="tab-btn" id="tabSettings" onclick="switchTab('Settings')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    SETTINGS
+  </button>
+  <button class="tab-btn" id="tabLogs" onclick="switchTab('Logs')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    LOGS
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://sample-api-1-ryj7.onrender.com';
+const token = localStorage.getItem('ta_token');
+if (!token) window.location.href = 'login.html';
+
+let userData = null, sessionData = null;
+let phoneCodeHash = null, currentPhone = null;
+let isRunning = false;
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function apiFetch(ep, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`} };
+  if (body) opts.body = JSON.stringify(body);
+  return (await fetch(`${API}${ep}`, opts)).json();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel${tab}`).classList.add('active');
+  document.getElementById(`tab${tab}`).classList.add('active');
+  document.getElementById('main').scrollTop = 0;
+  if (tab === 'Logs') loadLogs();
+}
+
+function toggleSwitch(id) {
+  document.getElementById(id).classList.toggle('on');
+}
+
+async function loadUser() {
+  try {
+    const data = await apiFetch('/api/ta/me');
+    if (!data.success) { logout(); return; }
+    userData = data.user;
+    document.getElementById('navUser').textContent = userData.name.split(' ')[0];
+    document.getElementById('navBadge').textContent = userData.plan.toUpperCase();
+    document.getElementById('navBadge').className = `plan-badge ${userData.plan==='pro'?'badge-pro':'badge-free'}`;
+
+    // Check if session exists
+    if (data.sessions && data.sessions.length > 0) {
+      sessionData = data.sessions[0];
+      showConnectedState();
+      loadAgentStatus();
+    }
+  } catch(e) { logout(); }
+}
+
+function showConnectedState() {
+  if (!sessionData) return;
+  document.getElementById('agentName').textContent = sessionData.agent_name || 'TeleAgent';
+  document.getElementById('agentToggleBtn').disabled = false;
+  document.getElementById('settAgentName').value = sessionData.agent_name || '';
+  document.getElementById('settPersonality').value = sessionData.personality || '';
+
+  // Show connected step
+  document.getElementById('stepPhone').style.display = 'none';
+  document.getElementById('stepOTP').style.display = 'none';
+  document.getElementById('stepConnected').style.display = 'block';
+  document.getElementById('step1').className = 'step done';
+  document.getElementById('step2').className = 'step done';
+  document.getElementById('step3').className = 'step done';
+  document.getElementById('connectedName').textContent = `Connected: ${sessionData.phone}`;
+}
+
+async function loadAgentStatus() {
+  if (!sessionData) return;
+  try {
+    const data = await apiFetch(`/api/ta/agent/status?session_id=${sessionData.id}`);
+    if (!data.success) return;
+    isRunning = data.is_running;
+    updateAgentUI(isRunning, data.total_replies || 0);
+  } catch(e) {}
+}
+
+function updateAgentUI(running, replies=0) {
+  const ring = document.getElementById('statusRing');
+  const statusText = document.getElementById('agentStatusText');
+  const toggleBtn = document.getElementById('agentToggleBtn');
+
+  ring.className = `status-ring ${running ? 'active' : 'inactive'}`;
+  statusText.textContent = running ? '● Online — actively replying' : '● Offline — not running';
+  statusText.className = `agent-status-text ${running ? 'status-active' : 'status-inactive'}`;
+  toggleBtn.className = `agent-toggle ${running ? 'toggle-stop' : 'toggle-start'}`;
+  toggleBtn.innerHTML = running
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop Agent'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start Agent';
+  document.getElementById('statReplies').textContent = replies;
+  document.getElementById('statUptime').textContent = running ? 'ON' : 'OFF';
+}
+
+async function toggleAgent() {
+  if (!sessionData) { showToast('Connect your Telegram first!', 'error'); return; }
+  const btn = document.getElementById('agentToggleBtn');
+  btn.disabled = true;
+  try {
+    if (isRunning) {
+      const data = await apiFetch('/api/ta/agent/stop', 'POST', {session_id: sessionData.id});
+      if (data.success) { isRunning = false; updateAgentUI(false); showToast('Agent stopped.'); }
+    } else {
+      const data = await apiFetch('/api/ta/agent/start', 'POST', {session_id: sessionData.id});
+      if (data.success) { isRunning = true; updateAgentUI(true); showToast(data.message, 'success'); }
+      else showToast(data.error || 'Failed to start', 'error');
+    }
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// CONNECT FLOW
+async function sendCode() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) { showToast('Enter phone number', 'error'); return; }
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const data = await apiFetch('/api/ta/telegram/send-code', 'POST', {phone});
+    if (data.success) {
+      phoneCodeHash = data.phone_code_hash;
+      currentPhone = phone;
+      document.getElementById('stepPhone').style.display = 'none';
+      document.getElementById('stepOTP').style.display = 'block';
+      document.getElementById('step1').className = 'step done';
+      document.getElementById('step2').className = 'step active';
+      showToast('Code sent to Telegram! ✅', 'success');
+    } else {
+      showToast(data.error || 'Failed to send code', 'error');
+    }
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'SEND VERIFICATION CODE'; }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('otpInput').value.trim();
+  const twoFA = document.getElementById('twoFAInput').value.trim();
+  if (!code) { showToast('Enter the verification code', 'error'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const body = {phone: currentPhone, code, phone_code_hash: phoneCodeHash};
+    if (twoFA) body.password = twoFA;
+    const data = await apiFetch('/api/ta/telegram/verify', 'POST', body);
+    if (data.success) {
+      sessionData = {id: data.session_id, phone: currentPhone, agent_name: data.tg_name};
+      document.getElementById('step2').className = 'step done';
+      document.getElementById('step3').className = 'step done';
+      document.getElementById('stepOTP').style.display = 'none';
+      document.getElementById('stepConnected').style.display = 'block';
+      document.getElementById('connectedName').textContent = `Connected as ${data.tg_name}`;
+      document.getElementById('agentToggleBtn').disabled = false;
+      showToast(`Connected as ${data.tg_name}! 🎉`, 'success');
+    } else if (data.error === '2FA_REQUIRED') {
+      document.getElementById('twoFASection').style.display = 'block';
+      document.getElementById('otpHint').textContent = 'This account has 2FA. Enter your password below.';
+      showToast('2FA required — enter your password', 'error');
+    } else {
+      showToast(data.error || 'Wrong code', 'error');
+    }
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'VERIFY & CONNECT'; }
+}
+
+function resetConnect() {
+  document.getElementById('stepPhone').style.display = 'block';
+  document.getElementById('stepOTP').style.display = 'none';
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('step1').className = 'step active';
+  document.getElementById('step2').className = 'step pending';
+}
+
+async function saveSettings() {
+  if (!sessionData) { showToast('Connect account first', 'error'); return; }
+  const personality = document.getElementById('settPersonality').value.trim();
+  const agentName = document.getElementById('settAgentName').value.trim();
+  const groupsOn = document.getElementById('toggleGroups').classList.contains('on');
+  const dmsOn = document.getElementById('toggleDMs').classList.contains('on');
+  try {
+    const data = await apiFetch('/api/ta/agent/settings', 'POST', {
+      session_id: sessionData.id, personality, agent_name: agentName,
+      groups_enabled: groupsOn, dms_enabled: dmsOn
+    });
+    if (data.success) { showToast('Settings saved! ✅', 'success'); document.getElementById('agentName').textContent = agentName || 'TeleAgent'; }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function loadLogs() {
+  if (!sessionData) {
+    document.getElementById('logsList').innerHTML = '<div class="loading">Connect your account first</div>';
+    return;
+  }
+  document.getElementById('logsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await apiFetch(`/api/ta/agent/logs?session_id=${sessionData.id}&limit=30`);
+    const logs = data.logs || [];
+    if (!logs.length) {
+      document.getElementById('logsList').innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:10px;">💬</div><div style="font-size:13px;">No messages yet.<br/>Start your agent and watch it reply!</div></div>';
+      return;
+    }
+    document.getElementById('logsList').innerHTML = logs.map(l => `
+      <div class="log-item">
+        <div class="log-icon">💬</div>
+        <div class="log-info">
+          <div class="log-chat">${l.chat_name || 'Unknown Chat'}</div>
+          <div class="log-incoming">← ${l.incoming_message}</div>
+          <div class="log-reply">→ ${l.ai_reply}</div>
+          <div class="log-time">${new Date(l.created_at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { document.getElementById('logsList').innerHTML = '<div class="loading">Failed to load</div>'; }
+}
+
+function logout() {
+  localStorage.removeItem('ta_token');
+  localStorage.removeItem('ta_user');
+  window.location.href = 'login.html';
+}
+
+loadUser();
+setInterval(loadAgentStatus, 30000);
+</script>
+</body>
+</html>
