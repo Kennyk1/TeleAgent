@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TeleAgent Logo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;gap:20px;padding:20px;}
+canvas{border-radius:20px;}
+.btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.btn{padding:12px 28px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.05em;}
+.btn-purple{background:linear-gradient(135deg,#7B61FF,#9b85ff);color:#fff;}
+.btn-cyan{background:linear-gradient(135deg,#00D4FF,#00a8cc);color:#000;}
+p{color:#666;font-size:13px;text-align:center;}
+.sizes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.size-btn{padding:8px 16px;border-radius:6px;border:1px solid #333;background:transparent;color:#888;font-size:12px;font-weight:600;cursor:pointer;}
+.size-btn.active{border-color:#7B61FF;color:#7B61FF;}
+</style>
+</head>
+<body>
+
+<canvas id="logo" width="500" height="500"></canvas>
+
+<div class="sizes">
+  <button class="size-btn active" onclick="setSize(500)">500×500</button>
+  <button class="size-btn" onclick="setSize(800)">800×800</button>
+  <button class="size-btn" onclick="setSize(1000)">1000×1000</button>
+</div>
+
+<div class="btns">
+  <button class="btn btn-purple" onclick="download('purple')">⬇ Download Purple</button>
+  <button class="btn btn-cyan" onclick="download('cyan')">⬇ Download Cyan</button>
+</div>
+
+<p>Tap download to save as PNG — works for profile pics, WhatsApp, anywhere!</p>
+
+<script>
+let currentSize = 500;
+let currentTheme = 'purple';
+
+function setSize(s) {
+  currentSize = s;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  draw(currentTheme);
+}
+
+function draw(theme = 'purple') {
+  currentTheme = theme;
+  const canvas = document.getElementById('logo');
+  const s = currentSize;
+  canvas.width = s;
+  canvas.height = s;
+  // Show at max 400px on screen
+  canvas.style.width = Math.min(s, 340) + 'px';
+  canvas.style.height = Math.min(s, 340) + 'px';
+
+  const ctx = canvas.getContext('2d');
+  const cx = s / 2;
+  const cy = s / 2;
+  const r = s / 2;
+
+  // Background gradient
+  const bg = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy, r);
+  if (theme === 'purple') {
+    bg.addColorStop(0, '#1a1040');
+    bg.addColorStop(1, '#050510');
+  } else {
+    bg.addColorStop(0, '#001830');
+    bg.addColorStop(1, '#000c1a');
+  }
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.18);
+  ctx.fill();
+
+  // Glow circle behind logo
+  const glowR = s * 0.32;
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+  if (theme === 'purple') {
+    glow.addColorStop(0, 'rgba(123,97,255,0.25)');
+    glow.addColorStop(1, 'rgba(123,97,255,0)');
+  } else {
+    glow.addColorStop(0, 'rgba(0,212,255,0.2)');
+    glow.addColorStop(1, 'rgba(0,212,255,0)');
+  }
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw T + Lightning bolt combined
+  const unit = s / 10;
+
+  // Create gradient for the shape
+  const grad = ctx.createLinearGradient(cx - unit * 2, cy - unit * 2.5, cx + unit * 1.5, cy + unit * 2.5);
+  if (theme === 'purple') {
+    grad.addColorStop(0, '#9b85ff');
+    grad.addColorStop(0.5, '#7B61FF');
+    grad.addColorStop(1, '#00D4FF');
+  } else {
+    grad.addColorStop(0, '#00D4FF');
+    grad.addColorStop(0.5, '#0099ff');
+    grad.addColorStop(1, '#7B61FF');
+  }
+
+  ctx.fillStyle = grad;
+  ctx.shadowColor = theme === 'purple' ? '#7B61FF' : '#00D4FF';
+  ctx.shadowBlur = unit * 3;
+
+  // T letter base
+  ctx.beginPath();
+  // Top bar of T
+  ctx.rect(cx - unit * 2.2, cy - unit * 2.5, unit * 4.4, unit * 0.9);
+  ctx.fill();
+
+  // Vertical bar of T
+  ctx.beginPath();
+  ctx.rect(cx - unit * 0.55, cy - unit * 1.6, unit * 1.1, unit * 2.6);
+  ctx.fill();
+
+  // Lightning bolt overlay on right side of T
+  ctx.shadowBlur = unit * 2;
+  ctx.fillStyle = theme === 'purple' ? '#00D4FF' : '#7B61FF';
+  ctx.shadowColor = theme === 'purple' ? '#00D4FF' : '#7B61FF';
+
+  // Lightning bolt shape
+  ctx.beginPath();
+  const bx = cx + unit * 0.8;
+  const by = cy - unit * 1.0;
+  ctx.moveTo(bx + unit * 0.3, by);           // top right
+  ctx.lineTo(bx - unit * 0.5, by + unit * 1.1); // middle left
+  ctx.lineTo(bx + unit * 0.1, by + unit * 1.1); // middle right
+  ctx.lineTo(bx - unit * 0.3, by + unit * 2.2); // bottom left
+  ctx.lineTo(bx + unit * 0.8, by + unit * 0.9); // middle right lower
+  ctx.lineTo(bx + unit * 0.2, by + unit * 0.9); // middle left lower
+  ctx.closePath();
+  ctx.fill();
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+
+  // TELEAGENT text
+  const fontSize = s * 0.072;
+  ctx.font = `900 ${fontSize}px 'Arial Black', sans-serif`;
+  ctx.letterSpacing = s * 0.008 + 'px';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Text gradient
+  const textGrad = ctx.createLinearGradient(cx - s*0.3, 0, cx + s*0.3, 0);
+  textGrad.addColorStop(0, '#ffffff');
+  textGrad.addColorStop(1, theme === 'purple' ? '#b8a8ff' : '#80e8ff');
+  ctx.fillStyle = textGrad;
+  ctx.fillText('TELEAGENT', cx, cy + unit * 2.8);
+
+  // Tagline
+  const tagSize = s * 0.038;
+  ctx.font = `600 ${tagSize}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('AI · TELEGRAM AUTOMATION', cx, cy + unit * 3.9);
+
+  // Corner dots decoration
+  const dotColor = theme === 'purple' ? 'rgba(123,97,255,0.4)' : 'rgba(0,212,255,0.4)';
+  [[0.12, 0.12], [0.88, 0.12], [0.12, 0.88], [0.88, 0.88]].forEach(([dx, dy]) => {
+    ctx.fillStyle = dotColor;
+    ctx.beginPath();
+    ctx.arc(s * dx, s * dy, s * 0.015, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function download(theme) {
+  draw(theme);
+  const canvas = document.getElementById('logo');
+  const link = document.createElement('a');
+  link.download = `teleagent-logo-${theme}-${currentSize}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+draw('purple');
+</script>
+</body>
+</html>
