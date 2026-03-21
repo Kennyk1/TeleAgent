@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Login — TeleAgent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#050510;--card:#0a0a1f;--border:rgba(123,97,255,0.15);--purple:#7B61FF;--cyan:#00D4FF;--text:#e8e8ff;--muted:#4a4a7a;--red:#ff4444;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;}
+body{display:flex;flex-direction:column;min-height:100vh;}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(123,97,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(123,97,255,0.03) 1px,transparent 1px);background-size:50px 50px;}
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;position:relative;z-index:1;}
+.auth-wrap{width:100%;max-width:400px;}
+.auth-logo{text-align:center;margin-bottom:32px;}
+.auth-logo a{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.1em;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;}
+.auth-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:0.04em;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.form-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.form-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:13px 16px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;margin-bottom:14px;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(123,97,255,0.5);}
+.form-input::placeholder{color:var(--muted);}
+.submit-btn{width:100%;padding:15px;border-radius:8px;background:linear-gradient(135deg,var(--purple),#9b85ff);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+.submit-btn:active{opacity:0.85;}
+.submit-btn:disabled{opacity:0.4;}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06);}
+.switch-link{text-align:center;font-size:13px;color:var(--muted);}
+.switch-link a{color:var(--purple);text-decoration:none;font-weight:700;}
+.error-box{background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;}
+.error-box.show{display:block;}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:12px;color:var(--muted);}
+footer a{color:var(--muted);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="page">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <a href="index.html">
+        <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        TELEAGENT
+      </a>
+    </div>
+    <div class="auth-card">
+      <div class="auth-title">WELCOME BACK</div>
+      <div class="auth-sub">Login to manage your AI agent.</div>
+      <div class="error-box" id="errorBox"></div>
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-input" id="email" placeholder="your@email.com" autocomplete="email"/>
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/>
+      <button class="submit-btn" id="loginBtn" onclick="login()">LOGIN TO DASHBOARD</button>
+      <div class="divider">or</div>
+      <div class="switch-link">Don't have an account? <a href="signup.html">Sign up free →</a></div>
+    </div>
+  </div>
+</div>
+<footer><a href="index.html">← Back to TeleAgent</a></footer>
+<script>
+const API = 'https://sample-api-1-ryj7.onrender.com';
+if (localStorage.getItem('ta_token')) window.location.href = 'dashboard.html';
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('errorBox');
+  err.classList.remove('show');
+  if (!email || !password) { err.textContent = 'Fill in all fields'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const res = await fetch(`${API}/api/ta/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password}) });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('ta_token', data.token);
+      localStorage.setItem('ta_user', JSON.stringify(data.user));
+      window.location.href = 'dashboard.html';
+    } else { err.textContent = data.error || 'Login failed'; err.classList.add('show'); }
+  } catch(e) { err.textContent = 'Network error. Try again.'; err.classList.add('show'); }
+  finally { btn.disabled = false; btn.textContent = 'LOGIN TO DASHBOARD'; }
+}
+</script>
+</body>
+</html>
