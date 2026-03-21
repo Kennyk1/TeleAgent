@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Admin — TeleAgent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#050510;--card:#0a0a1f;--border:rgba(123,97,255,0.12);--purple:#7B61FF;--cyan:#00D4FF;--text:#e8e8ff;--muted:#4a4a7a;--red:#ff4444;--green:#00ff88;--gold:#ffc107;}
+html,body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100%;}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(123,97,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(123,97,255,0.025) 1px,transparent 1px);background-size:50px 50px;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:100%;max-width:340px;text-align:center;}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.06em;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.login-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:13px 16px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:0.08em;}
+.login-btn{width:100%;padding:14px;border-radius:8px;background:linear-gradient(135deg,var(--purple),#9b85ff);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.06em;}
+
+nav{position:sticky;top:0;z-index:100;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(5,5,16,0.97);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:0.08em;color:var(--muted);}
+.nav-logo span{color:var(--red);}
+.nav-time{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);background:rgba(5,5,16,0.8);position:sticky;top:54px;z-index:50;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:13px 18px;font-size:11px;font-weight:700;letter-spacing:0.06em;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Syne',sans-serif;}
+.tab.active{color:var(--purple);border-bottom-color:var(--purple);}
+
+.content{padding:20px;max-width:800px;margin:0 auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr);}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;margin-bottom:4px;}
+.stat-num.purple{color:var(--purple);}
+.stat-num.green{color:var(--green);}
+.stat-num.gold{color:var(--gold);}
+.stat-num.red{color:var(--red);}
+.stat-label{font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;}
+
+.section-title{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;margin-top:4px;}
+.admin-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
+
+/* FORM */
+.form-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.form-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;margin-bottom:12px;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(123,97,255,0.5);}
+.form-input::placeholder{color:var(--muted);}
+textarea.form-input{resize:vertical;min-height:100px;line-height:1.5;}
+select.form-input{cursor:pointer;}
+select.form-input option{background:var(--card);}
+
+.btn{padding:11px 20px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{opacity:0.8;}
+.btn:disabled{opacity:0.4;}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#9b85ff);color:#fff;}
+.btn-green{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.2);}
+.btn-red{background:rgba(255,68,68,0.1);color:var(--red);border:1px solid rgba(255,68,68,0.2);}
+.btn-gold{background:rgba(255,193,7,0.1);color:var(--gold);border:1px solid rgba(255,193,7,0.2);}
+.btn-full{width:100%;justify-content:center;}
+
+/* USER LIST */
+.user-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.user-item:last-child{border-bottom:none;}
+.user-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:rgba(123,97,255,0.1);border:1px solid rgba(123,97,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--purple);flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:14px;font-weight:600;margin-bottom:2px;}
+.user-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-badges{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.plan-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.pt-free{background:rgba(74,74,122,0.2);color:var(--muted);}
+.pt-starter{background:rgba(0,212,255,0.1);color:var(--cyan);}
+.pt-pro{background:rgba(123,97,255,0.1);color:var(--purple);}
+.pt-empire{background:rgba(255,193,7,0.1);color:var(--gold);}
+.pt-banned{background:rgba(255,68,68,0.1);color:var(--red);}
+.user-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* UPGRADE REQUESTS */
+.upgrade-item{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.upgrade-item:last-child{border-bottom:none;}
+.upgrade-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.upgrade-user{font-size:14px;font-weight:600;}
+.upgrade-plan{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.screenshot-img{width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;cursor:pointer;}
+.upgrade-actions{display:flex;gap:8px;}
+
+/* PROMPT CARDS */
+.prompt-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.prompt-item:last-child{border-bottom:none;}
+.prompt-name{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.default-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(0,255,136,0.1);color:var(--green);}
+.prompt-preview{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* IMAGE VIEWER */
+.img-viewer{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;}
+.img-viewer.show{display:flex;}
+.img-viewer img{max-width:100%;max-height:90vh;border-radius:8px;object-fit:contain;}
+.img-viewer-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:#0a0a1f;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;transition:transform 0.3s;z-index:400;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(0,255,136,0.3);color:var(--green);}
+.toast.error{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-title">TELEAGENT ADMIN</div>
+    <div class="login-sub">Enter admin key to access</div>
+    <input type="password" class="login-input" id="adminKeyInput" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')adminLogin()"/>
+    <button class="login-btn" onclick="adminLogin()">ENTER</button>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-logo">TELEAGENT <span>ADMIN</span></div>
+  <div class="nav-time" id="navTime"></div>
+</nav>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('Overview',this)">OVERVIEW</button>
+  <button class="tab" onclick="switchTab('Users',this)">USERS</button>
+  <button class="tab" onclick="switchTab('Upgrades',this)">UPGRADES</button>
+  <button class="tab" onclick="switchTab('Prompts',this)">PROMPTS</button>
+  <button class="tab" onclick="switchTab('Settings',this)">SETTINGS</button>
+</div>
+
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panelOverview">
+    <div style="height:16px;"></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num purple" id="statTotal">—</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card"><div class="stat-num green" id="statActive">—</div><div class="stat-label">Active Agents</div></div>
+      <div class="stat-card"><div class="stat-num gold" id="statUpgraded">—</div><div class="stat-label">Upgraded</div></div>
+      <div class="stat-card"><div class="stat-num red" id="statPending">—</div><div class="stat-label">Pending Upgrades</div></div>
+    </div>
+
+    <div class="section-title">Recent Users</div>
+    <div class="admin-card" id="recentUsers"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- USERS -->
+  <div class="panel" id="panelUsers">
+    <div style="height:16px;"></div>
+    <div class="section-title">All Users</div>
+    <div class="admin-card" id="usersList"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- UPGRADES -->
+  <div class="panel" id="panelUpgrades">
+    <div style="height:16px;"></div>
+    <div class="section-title">Pending Upgrade Requests</div>
+    <div class="admin-card" id="upgradesList"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- PROMPTS -->
+  <div class="panel" id="panelPrompts">
+    <div style="height:16px;"></div>
+    <div class="section-title">Create New Prompt Template</div>
+    <div class="admin-card">
+      <div class="form-label">Template Name</div>
+      <input type="text" class="form-input" id="promptName" placeholder="e.g. Earning Platform, Crypto Group..."/>
+      <div class="form-label">Description</div>
+      <input type="text" class="form-input" id="promptDesc" placeholder="Brief description of what this is for"/>
+      <div class="form-label">Prompt Content</div>
+      <textarea class="form-input" id="promptContent" rows="8" placeholder="Write the full AI prompt/personality here..."></textarea>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <input type="checkbox" id="promptDefault" style="width:16px;height:16px;cursor:pointer;"/>
+        <label for="promptDefault" style="font-size:13px;color:var(--muted);cursor:pointer;">Set as default for new users</label>
+      </div>
+      <button class="btn btn-purple btn-full" onclick="createPrompt()">CREATE PROMPT TEMPLATE</button>
+    </div>
+
+    <div class="section-title">Existing Templates</div>
+    <div class="admin-card" id="promptsList"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="panelSettings">
+    <div style="height:16px;"></div>
+    <div class="section-title">Payment Details</div>
+    <div class="admin-card">
+      <div class="form-label">USDT TRC20 Wallet Address</div>
+      <input type="text" class="form-input" id="settCrypto" placeholder="Your USDT TRC20 address"/>
+      <div class="form-label">NGN Bank Name</div>
+      <input type="text" class="form-input" id="settBankName" placeholder="e.g. Opay"/>
+      <div class="form-label">NGN Account Number</div>
+      <input type="text" class="form-input" id="settAccountNum" placeholder="10-digit account number"/>
+      <div class="form-label">Account Name</div>
+      <input type="text" class="form-input" id="settAccountName" placeholder="Account holder name"/>
+      <button class="btn btn-purple btn-full" onclick="savePaySettings()">SAVE PAYMENT DETAILS</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- IMAGE VIEWER -->
+<div class="img-viewer" id="imgViewer">
+  <img id="viewerImg" src="" alt=""/>
+  <button class="img-viewer-close" onclick="closeViewer()">×</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://sample-api-1-ryj7.onrender.com';
+let adminKey = '';
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.classList.remove('show'); }, 3000);
+}
+
+function adminLogin() {
+  const key = document.getElementById('adminKeyInput').value.trim();
+  if (!key) return;
+  adminKey = key;
+  document.getElementById('loginScreen').style.display = 'none';
+  loadOverview();
+  setInterval(() => {
+    document.getElementById('navTime').textContent = new Date().toLocaleTimeString();
+  }, 1000);
+}
+
+async function adminApi(ep, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json','x-admin-key':adminKey} };
+  if (body) opts.body = JSON.stringify(body);
+  return (await fetch(`${API}${ep}`, opts)).json();
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel${tab}`).classList.add('active');
+  btn.classList.add('active');
+  if (tab==='Overview') loadOverview();
+  if (tab==='Users') loadUsers();
+  if (tab==='Upgrades') loadUpgrades();
+  if (tab==='Prompts') loadPrompts();
+}
+
+function viewImg(src) {
+  document.getElementById('viewerImg').src = src;
+  document.getElementById('imgViewer').classList.add('show');
+}
+function closeViewer() { document.getElementById('imgViewer').classList.remove('show'); }
+
+async function loadOverview() {
+  try {
+    const [users, upgrades] = await Promise.all([
+      adminApi('/api/ta/admin/users'),
+      adminApi('/api/ta/admin/upgrades')
+    ]);
+
+    const allUsers = users.users || [];
+    const pendingUpgrades = (upgrades.upgrades || []).filter(u => u.upgrade_request?.includes('pending'));
+    const upgraded = allUsers.filter(u => u.plan !== 'free').length;
+
+    document.getElementById('statTotal').textContent = allUsers.length;
+    document.getElementById('statUpgraded').textContent = upgraded;
+    document.getElementById('statPending').textContent = pendingUpgrades.length;
+    document.getElementById('statActive').textContent = '—';
+
+    document.getElementById('recentUsers').innerHTML = allUsers.slice(0,5).map(u => userRow(u)).join('') || '<div class="loading">No users yet</div>';
+  } catch(e) { showToast('Failed to load', 'error'); }
+}
+
+function userRow(u) {
+  const plan = u.is_banned ? 'banned' : (u.plan || 'free');
+  const planColors = {free:'pt-free',starter:'pt-starter',pro:'pt-pro',empire:'pt-empire',banned:'pt-banned'};
+  return `
+    <div class="user-item">
+      <div class="user-top">
+        <div class="user-avatar">${(u.name||'U')[0].toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${u.name}</div>
+          <div class="user-email">${u.email||'—'}</div>
+        </div>
+        <div class="user-badges">
+          <span class="plan-tag ${planColors[plan]||'pt-free'}">${plan.toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="user-actions">
+        <button class="btn btn-gold" onclick="editUserPrompt('${u.id}','${u.name}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Edit Prompt
+        </button>
+        <button class="btn ${u.is_banned?'btn-green':'btn-red'}" onclick="toggleBan('${u.id}',${!u.is_banned})">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/>${u.is_banned?'<polyline points="20 6 9 17 4 12"/>':'<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'}</svg>
+          ${u.is_banned?'Unban':'Ban'}
+        </button>
+        <button class="btn btn-purple" onclick="upgradePlan('${u.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+          Upgrade
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function loadUsers() {
+  document.getElementById('usersList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await adminApi('/api/ta/admin/users');
+    const users = data.users || [];
+    document.getElementById('usersList').innerHTML = users.length
+      ? users.map(u => userRow(u)).join('')
+      : '<div class="loading">No users yet</div>';
+  } catch(e) { showToast('Failed', 'error'); }
+}
+
+async function loadUpgrades() {
+  document.getElementById('upgradesList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await adminApi('/api/ta/admin/upgrades');
+    const upgrades = (data.upgrades || []).filter(u => u.upgrade_request?.includes('pending'));
+    if (!upgrades.length) {
+      document.getElementById('upgradesList').innerHTML = '<div class="loading">No pending upgrades</div>';
+      return;
+    }
+    document.getElementById('upgradesList').innerHTML = upgrades.map(u => {
+      const parts = (u.upgrade_request||'').split('|');
+      const plan = parts[0] || '—';
+      const method = parts[1] || '—';
+      return `
+        <div class="upgrade-item">
+          <div class="upgrade-header">
+            <div class="upgrade-user">${u.name} <span style="font-size:11px;color:var(--muted);">${u.email||''}</span></div>
+            <span class="upgrade-plan" style="background:rgba(123,97,255,0.1);color:var(--purple);">${plan.toUpperCase()} · ${method.toUpperCase()}</span>
+          </div>
+          ${u.upgrade_screenshot ? `<img class="screenshot-img" src="${u.upgrade_screenshot}" onclick="viewImg('${u.upgrade_screenshot}')" alt="Payment screenshot"/>` : '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">No screenshot provided</div>'}
+          <div class="upgrade-actions">
+            <button class="btn btn-green" onclick="confirmUpgrade('${u.id}','${plan}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirm
+            </button>
+            <button class="btn btn-red" onclick="rejectUpgrade('${u.id}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Reject
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) { showToast('Failed', 'error'); }
+}
+
+async function confirmUpgrade(userId, plan) {
+  try {
+    const data = await adminApi('/api/ta/admin/confirm-upgrade', 'POST', {user_id: userId, plan});
+    if (data.success) { showToast(`${plan} plan activated! ✅`, 'success'); loadUpgrades(); loadUsers(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function rejectUpgrade(userId) {
+  try {
+    const data = await adminApi('/api/ta/admin/reject-upgrade', 'POST', {user_id: userId});
+    if (data.success) { showToast('Upgrade rejected', 'success'); loadUpgrades(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function toggleBan(userId, ban) {
+  try {
+    const data = await adminApi('/api/ta/admin/ban', 'POST', {user_id: userId, ban});
+    if (data.success) { showToast(ban ? 'User banned' : 'User unbanned', 'success'); loadUsers(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function upgradePlan(userId) {
+  const plan = prompt('Enter plan (starter/pro/empire):');
+  if (!plan || !['starter','pro','empire'].includes(plan.toLowerCase())) return showToast('Invalid plan', 'error');
+  await confirmUpgrade(userId, plan.toLowerCase());
+}
+
+function editUserPrompt(userId, name) {
+  const info = prompt(`Edit training/prompt for ${name}:\n(This will replace their current training data)`);
+  if (info === null) return;
+  adminApi('/api/ta/admin/edit-prompt', 'POST', {user_id: userId, training_data: info})
+    .then(data => {
+      if (data.success) showToast('Prompt updated! ✅', 'success');
+      else showToast(data.error || 'Failed', 'error');
+    });
+}
+
+async function loadPrompts() {
+  document.getElementById('promptsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await adminApi('/api/ta/admin/prompts');
+    const prompts = data.prompts || [];
+    if (!prompts.length) {
+      document.getElementById('promptsList').innerHTML = '<div class="loading">No prompt templates yet</div>';
+      return;
+    }
+    document.getElementById('promptsList').innerHTML = prompts.map(p => `
+      <div class="prompt-item">
+        <div class="prompt-name">
+          ${p.name}
+          ${p.is_default ? '<span class="default-tag">DEFAULT</span>' : ''}
+        </div>
+        <div class="prompt-preview">${p.description || p.content.substring(0,100) + '...'}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-red" onclick="deletePrompt('${p.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
+          ${!p.is_default ? `<button class="btn btn-green" onclick="setDefaultPrompt('${p.id}')">Set Default</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { showToast('Failed', 'error'); }
+}
+
+async function createPrompt() {
+  const name = document.getElementById('promptName').value.trim();
+  const desc = document.getElementById('promptDesc').value.trim();
+  const content = document.getElementById('promptContent').value.trim();
+  const isDefault = document.getElementById('promptDefault').checked;
+  if (!name || !content) { showToast('Name and content required', 'error'); return; }
+  try {
+    const data = await adminApi('/api/ta/admin/prompts', 'POST', {name, description: desc, content, is_default: isDefault});
+    if (data.success) {
+      showToast('Prompt created! ✅', 'success');
+      document.getElementById('promptName').value = '';
+      document.getElementById('promptDesc').value = '';
+      document.getElementById('promptContent').value = '';
+      document.getElementById('promptDefault').checked = false;
+      loadPrompts();
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function deletePrompt(id) {
+  if (!confirm('Delete this prompt template?')) return;
+  try {
+    const data = await adminApi(`/api/ta/admin/prompts/${id}`, 'DELETE');
+    if (data.success) { showToast('Deleted', 'success'); loadPrompts(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function setDefaultPrompt(id) {
+  try {
+    const data = await adminApi('/api/ta/admin/prompts/default', 'POST', {prompt_id: id});
+    if (data.success) { showToast('Default set! ✅', 'success'); loadPrompts(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function savePaySettings() {
+  const crypto = document.getElementById('settCrypto').value.trim();
+  const bankName = document.getElementById('settBankName').value.trim();
+  const accountNum = document.getElementById('settAccountNum').value.trim();
+  const accountName = document.getElementById('settAccountName').value.trim();
+  try {
+    const data = await adminApi('/api/ta/admin/pay-settings', 'POST', {crypto, bank_name: bankName, account_num: accountNum, account_name: accountName});
+    if (data.success) showToast('Payment settings saved! ✅', 'success');
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+</script>
+</body>
+</html>
