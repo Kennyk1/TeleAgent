@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Dashboard — TeleAgent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#050510;--card:#0a0a1f;--border:rgba(123,97,255,0.12);--purple:#7B61FF;--cyan:#00D4FF;--text:#e8e8ff;--muted:#4a4a7a;--red:#ff4444;--green:#00ff88;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden;}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(123,97,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(123,97,255,0.025) 1px,transparent 1px);background-size:50px 50px;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(5,5,16,0.97);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.1em;display:flex;align-items:center;gap:8px;}
+.logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.plan-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.badge-free{background:rgba(74,74,122,0.2);color:var(--muted);border:1px solid rgba(74,74,122,0.3);}
+.badge-starter{background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.25);}
+.badge-pro{background:rgba(123,97,255,0.12);color:var(--purple);border:1px solid rgba(123,97,255,0.25);}
+.badge-empire{background:rgba(255,193,7,0.1);color:#ffc107;border:1px solid rgba(255,193,7,0.25);}
+.nav-user{font-size:13px;font-weight:600;}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--muted);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;transition:all 0.2s;}
+.logout-btn:hover{border-color:rgba(255,68,68,0.4);color:var(--red);}
+
+.main{position:fixed;top:56px;bottom:60px;left:0;right:0;overflow-y:auto;z-index:1;}
+.main::-webkit-scrollbar{display:none;}
+
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:100;height:60px;display:flex;background:rgba(5,5,16,0.98);border-top:1px solid var(--border);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.04em;-webkit-tap-highlight-color:transparent;transition:color 0.2s;}
+.tab-btn.active{color:var(--purple);}
+.tab-btn.active svg{stroke:var(--purple);}
+
+.panel{display:none;padding:16px;max-width:600px;margin:0 auto;padding-bottom:20px;}
+.panel.active{display:block;}
+
+/* ONBOARDING */
+.onboard-card{background:linear-gradient(135deg,rgba(123,97,255,0.08),rgba(0,212,255,0.04));border:1px solid rgba(123,97,255,0.2);border-radius:16px;padding:24px;margin-bottom:14px;text-align:center;}
+.onboard-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
+.onboard-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:6px;}
+.onboard-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+
+/* AGENT HERO */
+.agent-hero{background:linear-gradient(135deg,rgba(123,97,255,0.08),rgba(0,212,255,0.04));border:1px solid rgba(123,97,255,0.2);border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;}
+.agent-status-wrap{position:relative;width:72px;height:72px;margin:0 auto 14px;}
+.agent-icon-bg{width:72px;height:72px;border-radius:50%;background:rgba(123,97,255,0.1);border:2px solid rgba(123,97,255,0.2);display:flex;align-items:center;justify-content:center;}
+.status-ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid transparent;}
+.status-ring.on{border-color:var(--green);animation:ringPulse 2s ease-in-out infinite;}
+.status-ring.off{border-color:var(--muted);}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 10px rgba(0,255,136,0.2);}50%{box-shadow:0 0 30px rgba(0,255,136,0.5);}}
+.agent-name-text{font-size:18px;font-weight:700;margin-bottom:4px;}
+.agent-status-label{font-size:12px;margin-bottom:16px;}
+.status-on{color:var(--green);}
+.status-off{color:var(--muted);}
+.agent-ctrl-row{display:flex;gap:10px;justify-content:center;}
+.ctrl-btn{padding:11px 24px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;-webkit-tap-highlight-color:transparent;}
+.ctrl-btn:active{opacity:0.8;}
+.ctrl-btn:disabled{opacity:0.4;}
+.btn-start{background:linear-gradient(135deg,var(--green),#00cc70);color:#000;}
+.btn-stop{background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.2);color:var(--red);}
+.btn-disconnect{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+.stat-mini{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;text-align:center;}
+.stat-mini-num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--purple);}
+.stat-mini-label{font-size:10px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
+
+/* CONNECT */
+.section-label{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;margin-top:4px;}
+.connect-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.steps{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.step{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.step.done{background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;}
+.step.active-step{background:rgba(123,97,255,0.15);border:2px solid var(--purple);color:var(--purple);}
+.step.pending-step{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);}
+.step-line{flex:1;height:1px;background:var(--border);}
+
+.form-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
+.form-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;margin-bottom:12px;transition:border-color 0.2s;}
+.form-input:focus{border-color:rgba(123,97,255,0.5);}
+.form-input::placeholder{color:var(--muted);}
+textarea.form-input{resize:vertical;min-height:80px;line-height:1.5;}
+.form-hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+
+.action-btn{padding:13px 24px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s;display:inline-flex;align-items:center;gap:6px;}
+.action-btn:active{opacity:0.8;}
+.action-btn:disabled{opacity:0.4;}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#9b85ff);color:#fff;}
+.btn-cyan{background:linear-gradient(135deg,var(--cyan),#00a8cc);color:#000;}
+.btn-full{width:100%;justify-content:center;}
+
+/* SETTINGS */
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.setting-row:last-child{border-bottom:none;}
+.setting-info{}
+.setting-label{font-size:14px;font-weight:600;margin-bottom:2px;}
+.setting-sub{font-size:12px;color:var(--muted);}
+.toggle{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:var(--purple);border-color:var(--purple);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.2s;}
+.toggle.on::after{transform:translateX(20px);}
+
+.reply-mode-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.mode-btn{padding:10px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.mode-btn.active{background:rgba(123,97,255,0.1);border-color:rgba(123,97,255,0.3);color:var(--purple);}
+
+.delay-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.delay-btn{padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.delay-btn.active{background:rgba(123,97,255,0.1);border-color:rgba(123,97,255,0.3);color:var(--purple);}
+
+/* GROUPS */
+.group-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.group-item:last-child{border-bottom:none;}
+.group-icon-wrap{width:38px;height:38px;border-radius:10px;background:rgba(123,97,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.group-info-wrap{flex:1;}
+.group-name-text{font-size:14px;font-weight:600;margin-bottom:2px;}
+.group-meta{font-size:11px;color:var(--muted);}
+.group-type-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(0,212,255,0.08);color:var(--cyan);}
+
+/* TRAINING */
+.training-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.training-history{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.7;max-height:200px;overflow-y:auto;margin-bottom:12px;white-space:pre-wrap;}
+
+/* LOGS */
+.log-item{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.log-item:last-child{border-bottom:none;}
+.log-icon-wrap{width:32px;height:32px;border-radius:8px;background:rgba(123,97,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.log-details{flex:1;min-width:0;}
+.log-chat-name{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:3px;}
+.log-in{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.log-out{font-size:13px;color:var(--text);line-height:1.4;}
+.log-time-text{font-size:10px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+/* UPGRADE */
+.upgrade-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:14px;}
+.upgrade-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;text-align:center;}
+.upgrade-card:active{opacity:0.8;}
+.upgrade-card.selected{border-color:var(--purple);background:rgba(123,97,255,0.06);}
+.upgrade-card.empire{border-color:rgba(255,193,7,0.2);}
+.upgrade-card.empire.selected{border-color:#ffc107;background:rgba(255,193,7,0.06);}
+.upgrade-plan-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.04em;margin-bottom:4px;}
+.upgrade-price{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;margin-bottom:8px;}
+.upgrade-features{font-size:11px;color:var(--muted);line-height:1.6;text-align:left;}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.loading{text-align:center;padding:30px;color:var(--muted);font-size:13px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(60px);background:#0a0a1f;border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;transition:transform 0.3s;z-index:300;white-space:nowrap;max-width:88vw;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(0,255,136,0.3);color:var(--green);}
+.toast.error{border-color:rgba(255,68,68,0.3);color:var(--red);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    TELEAGENT
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser">...</span>
+    <span class="plan-badge badge-free" id="navBadge">FREE</span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main" id="main">
+
+  <!-- AGENT PANEL -->
+  <div class="panel active" id="panelAgent">
+    <div style="height:14px;"></div>
+
+    <!-- ONBOARDING (shown if not done) -->
+    <div id="onboardSection" style="display:none;">
+      <div class="onboard-card">
+        <div class="onboard-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="onboard-title">SETUP YOUR AGENT</div>
+        <div class="onboard-sub">Connect your Telegram account and tell us your platform name. Your AI agent will be ready in minutes.</div>
+      </div>
+    </div>
+
+    <!-- AGENT STATUS (shown when connected) -->
+    <div id="agentSection" style="display:none;">
+      <div class="agent-hero">
+        <div class="agent-status-wrap">
+          <div class="agent-icon-bg">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="status-ring off" id="statusRing"></div>
+        </div>
+        <div class="agent-name-text" id="agentNameText">TeleAgent</div>
+        <div class="agent-status-label status-off" id="agentStatusLabel">Offline</div>
+        <div class="agent-ctrl-row">
+          <button class="ctrl-btn btn-start" id="startBtn" onclick="toggleAgent()" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start
+          </button>
+          <button class="ctrl-btn btn-disconnect" onclick="disconnectAccount()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Disconnect
+          </button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-mini"><div class="stat-mini-num" id="statReplies">0</div><div class="stat-mini-label">Replies</div></div>
+          <div class="stat-mini"><div class="stat-mini-num" id="statStatus">OFF</div><div class="stat-mini-label">Status</div></div>
+          <div class="stat-mini"><div class="stat-mini-num" id="statPlatform">—</div><div class="stat-mini-label">Platform</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONNECT FLOW -->
+    <div id="connectSection">
+      <div class="section-label">Connect Telegram</div>
+      <div class="connect-card">
+        <div class="steps">
+          <div class="step active-step" id="step1">1</div>
+          <div class="step-line"></div>
+          <div class="step pending-step" id="step2">2</div>
+          <div class="step-line"></div>
+          <div class="step pending-step" id="step3">3</div>
+        </div>
+
+        <div id="stepPhone">
+          <div class="form-label">Platform Name</div>
+          <input type="text" class="form-input" id="platformInput" placeholder="e.g. Zaparo, Earnify..."/>
+          <div class="form-label">Telegram Phone Number</div>
+          <input type="tel" class="form-input" id="phoneInput" placeholder="+2348012345678"/>
+          <div class="form-hint">Include country code. A code will be sent to your Telegram app.</div>
+          <button class="action-btn btn-purple btn-full" id="sendCodeBtn" onclick="sendCode()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            SEND VERIFICATION CODE
+          </button>
+        </div>
+
+        <div id="stepOTP" style="display:none;">
+          <div class="form-label">Verification Code</div>
+          <input type="text" class="form-input" id="otpInput" placeholder="12345" maxlength="5" style="letter-spacing:0.2em;font-size:22px;text-align:center;font-family:'JetBrains Mono',monospace;"/>
+          <div class="form-hint" id="otpHint">Check your Telegram app for the 5-digit code.</div>
+          <div id="twoFASection" style="display:none;">
+            <div class="form-label">Two-Factor Password</div>
+            <input type="password" class="form-input" id="twoFAInput" placeholder="Your 2FA password"/>
+          </div>
+          <button class="action-btn btn-cyan btn-full" id="verifyBtn" onclick="verifyCode()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            VERIFY & CONNECT
+          </button>
+          <button style="width:100%;padding:10px;margin-top:8px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;" onclick="resetConnect()">← Change Number</button>
+        </div>
+
+        <div id="stepDone" style="display:none;text-align:center;padding:10px 0;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" style="margin-bottom:12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px;" id="connectedLabel">Connected!</div>
+          <div style="font-size:13px;color:var(--muted);">Agent started automatically. Check your Telegram Saved Messages for confirmation.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panelSettings">
+    <div style="height:14px;"></div>
+
+    <div class="section-label">Reply Behaviour</div>
+    <div class="settings-card">
+      <div class="form-label">Reply Mode</div>
+      <div class="reply-mode-btns">
+        <button class="mode-btn active" id="modeQuestions" onclick="setMode('questions')">Questions Only</button>
+        <button class="mode-btn" id="modeAll" onclick="setMode('all')">All Messages</button>
+        <button class="mode-btn" id="modeKeywords" onclick="setMode('keywords')">Keywords</button>
+      </div>
+      <div id="keywordsSection" style="display:none;margin-top:12px;">
+        <div class="form-label">Trigger Keywords (comma separated)</div>
+        <input type="text" class="form-input" id="keywordsInput" placeholder="withdraw, ban, help, task..."/>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="form-label">Reply Delay (human-like)</div>
+        <div class="delay-row">
+          <button class="delay-btn" id="delay0" onclick="setDelay(0)">Instant</button>
+          <button class="delay-btn active" id="delay3" onclick="setDelay(3)">3 sec</button>
+          <button class="delay-btn" id="delay5" onclick="setDelay(5)">5 sec</button>
+          <button class="delay-btn" id="delay10" onclick="setDelay(10)">10 sec</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Features</div>
+    <div class="settings-card">
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">Reply in Groups</div>
+          <div class="setting-sub">Agent replies to group messages</div>
+        </div>
+        <div class="toggle on" id="toggleGroups" onclick="flipToggle('toggleGroups')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">Reply in DMs</div>
+          <div class="setting-sub">Agent replies to private messages</div>
+        </div>
+        <div class="toggle on" id="toggleDMs" onclick="flipToggle('toggleDMs')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">Delete Links</div>
+          <div class="setting-sub">Auto delete links posted in groups</div>
+        </div>
+        <div class="toggle" id="toggleLinks" onclick="flipToggle('toggleLinks')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">Welcome New Members</div>
+          <div class="setting-sub">Send greeting when someone joins</div>
+        </div>
+        <div class="toggle" id="toggleGreeting" onclick="flipToggle('toggleGreeting')"></div>
+      </div>
+    </div>
+
+    <div class="section-label">Welcome Message</div>
+    <div class="settings-card">
+      <div class="form-hint">Use {name} for member's name and {platform} for your platform name.</div>
+      <textarea class="form-input" id="greetingInput" placeholder="Welcome to {platform}, {name}! 🎉 Feel free to ask any questions." rows="3"></textarea>
+    </div>
+
+    <button class="action-btn btn-purple btn-full" onclick="saveSettings()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      SAVE SETTINGS
+    </button>
+  </div>
+
+  <!-- TRAINING PANEL -->
+  <div class="panel" id="panelTraining">
+    <div style="height:14px;"></div>
+
+    <div class="section-label">Train Your AI</div>
+    <div class="training-card">
+      <div class="form-hint" style="margin-bottom:12px;">Add rules, FAQs or custom responses. The AI will use this to reply more accurately for your platform.</div>
+      <div class="form-label">Current Training Data</div>
+      <div class="training-history" id="trainingHistory">No training data yet. Add some below!</div>
+    </div>
+
+    <div class="settings-card">
+      <div class="form-label">Add New Information</div>
+      <textarea class="form-input" id="trainingInput" placeholder="Example: When users ask about minimum withdrawal, tell them it is ₦1000. When users ask about task price, tell them each task pays ₦50..." rows="5"></textarea>
+      <button class="action-btn btn-purple btn-full" style="margin-top:4px;" onclick="trainAgent()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        UPDATE AI KNOWLEDGE
+      </button>
+    </div>
+
+    <div class="section-label">Admin Groups</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;">
+      <div id="groupsList"><div class="loading">Loading your groups...</div></div>
+      <button class="action-btn btn-full" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);margin-top:12px;" onclick="loadGroups()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-4.96"/></svg>
+        REFRESH GROUPS
+      </button>
+    </div>
+  </div>
+
+  <!-- LOGS PANEL -->
+  <div class="panel" id="panelLogs">
+    <div style="height:14px;"></div>
+    <div class="section-label">Message History</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;" id="logsList">
+      <div class="loading">Loading logs...</div>
+    </div>
+  </div>
+
+  <!-- UPGRADE PANEL -->
+  <div class="panel" id="panelUpgrade">
+    <div style="height:14px;"></div>
+    <div class="section-label">Choose Your Plan</div>
+
+    <div class="upgrade-grid">
+      <div class="upgrade-card selected" id="planStarter" onclick="selectPlan('starter')">
+        <div class="upgrade-plan-name" style="color:var(--cyan);">STARTER</div>
+        <div class="upgrade-price" style="color:var(--cyan);">$40</div>
+        <div class="upgrade-features">1 account<br/>Unlimited messages<br/>Groups + DMs<br/>Link deletion<br/>Greetings</div>
+      </div>
+      <div class="upgrade-card" id="planPro" onclick="selectPlan('pro')">
+        <div class="upgrade-plan-name" style="color:var(--purple);">PRO</div>
+        <div class="upgrade-price" style="color:var(--purple);">$60</div>
+        <div class="upgrade-features">2 accounts<br/>Unlimited groups<br/>5 bots<br/>Bot deployment<br/>Everything in Starter</div>
+      </div>
+      <div class="upgrade-card empire" id="planEmpire" onclick="selectPlan('empire')">
+        <div class="upgrade-plan-name" style="color:#ffc107;">EMPIRE</div>
+        <div class="upgrade-price" style="color:#ffc107;">$100</div>
+        <div class="upgrade-features">5 accounts<br/>Unlimited bots<br/>Website creation<br/>AI trading<br/>Everything in Pro</div>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="form-label">Payment Method</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <button class="mode-btn active" id="payUSDT" onclick="setPayMethod('crypto')">USDT TRC20</button>
+        <button class="mode-btn" id="payNGN" onclick="setPayMethod('bank')">NGN Transfer</button>
+      </div>
+
+      <div id="payDetails" style="background:rgba(123,97,255,0.04);border:1px solid rgba(123,97,255,0.15);border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:8px;">PAYMENT DETAILS</div>
+        <div id="payInfo" style="font-size:12px;color:var(--muted);line-height:1.8;"></div>
+      </div>
+
+      <div class="form-label">Payment Screenshot</div>
+      <div style="margin-bottom:12px;">
+        <input type="file" id="payScreenshot" accept="image/*" style="display:none;" onchange="previewScreenshot(event)"/>
+        <div style="background:rgba(255,255,255,0.03);border:1px dashed rgba(123,97,255,0.3);border-radius:8px;padding:20px;text-align:center;cursor:pointer;" onclick="document.getElementById('payScreenshot').click()" id="screenshotBox">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:13px;color:var(--muted);">Tap to upload payment screenshot</div>
+        </div>
+        <img id="screenshotPreview" src="" style="display:none;width:100%;border-radius:8px;margin-top:8px;border:1px solid var(--border);"/>
+      </div>
+      <button class="action-btn btn-purple btn-full" onclick="submitUpgrade()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        SUBMIT UPGRADE REQUEST
+      </button>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;">Admin confirms within 24 hours after payment verification</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM TABS -->
+<div class="bottom-tabs">
+  <button class="tab-btn active" id="tabAgent" onclick="switchTab('Agent')">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    AGENT
+  </button>
+  <button class="tab-btn" id="tabSettings" onclick="switchTab('Settings')">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    SETTINGS
+  </button>
+  <button class="tab-btn" id="tabTraining" onclick="switchTab('Training')">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    TRAIN
+  </button>
+  <button class="tab-btn" id="tabLogs" onclick="switchTab('Logs')">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    LOGS
+  </button>
+  <button class="tab-btn" id="tabUpgrade" onclick="switchTab('Upgrade')">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    UPGRADE
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://sample-api-1-ryj7.onrender.com';
+const token = localStorage.getItem('ta_token');
+if (!token) window.location.href = 'login.html';
+
+let userData = null, sessionData = null;
+let phoneCodeHash = null, currentPhone = null;
+let isRunning = false, selectedPlan = 'starter', payMethod = 'crypto';
+let replyMode = 'questions', replyDelay = 3;
+let totalReplies = 0;
+let sseSource = null;
+
+const PAY_INFO = {
+  crypto: 'Network: TRC20 (USDT)\nWallet: Loading...\n\nSend exact amount and upload screenshot.',
+  bank: 'Bank: Loading...\n\nSend exact amount and upload screenshot.'
+};
+
+// ── SSE REALTIME ───────────────────────────────────
+function initSSE() {
+  if (!sessionData) return;
+  if (sseSource) { sseSource.close(); sseSource = null; }
+
+  sseSource = new EventSource(`${API}/api/ta/stream/${sessionData.id}?token=${token}`);
+
+  sseSource.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'new_log') {
+        totalReplies = msg.total;
+        document.getElementById('statReplies').textContent = totalReplies;
+        if (document.getElementById('panelLogs').classList.contains('active')) {
+          prependLog(msg.log);
+        }
+      }
+      if (msg.type === 'status') {
+        isRunning = msg.is_running;
+        updateAgentUI(isRunning);
+      }
+      // heartbeat & connected → do nothing, just keeps alive
+    } catch(e) {}
+  };
+
+  sseSource.onerror = () => {
+    // Auto-reconnect after 5s
+    setTimeout(() => { if (sessionData) initSSE(); }, 5000);
+  };
+}
+
+function stopSSE() {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+}
+
+function prependLog(l) {
+  const list = document.getElementById('logsList');
+  const empty = list.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.style.animation = 'fadeIn 0.3s ease';
+  div.innerHTML = `
+    <div class="log-icon-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="log-details">
+      <div class="log-chat-name">${l.chat_name || 'Unknown'}</div>
+      <div class="log-in">← ${l.incoming_message}</div>
+      <div class="log-out">→ ${l.ai_reply}</div>
+      <div class="log-time-text">${new Date(l.created_at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`;
+  list.insertBefore(div, list.firstChild);
+}
+
+// ── API ────────────────────────────────────────────
+async function apiFetch(ep, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`} };
+  if (body) opts.body = JSON.stringify(body);
+  return (await fetch(`${API}${ep}`, opts)).json();
+}
+
+async function loadPaySettings() {
+  try {
+    const data = await apiFetch('/api/ta/pay-settings');
+    if (data.success && data.settings) {
+      const s = data.settings;
+      PAY_INFO.crypto = `Network: TRC20 (USDT)\nWallet: ${s.crypto || 'Contact admin'}\n\nSend exact amount and upload screenshot.`;
+      PAY_INFO.bank = `Bank: ${s.bank_name || 'Contact admin'}\nAccount: ${s.account_num || '—'}\nName: ${s.account_name || '—'}\n\nSend exact amount and upload screenshot.`;
+    }
+  } catch(e) {}
+  setPayMethod('crypto');
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { t.className = 'toast'; }, 400);
+  }, 3000);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel${tab}`).classList.add('active');
+  document.getElementById(`tab${tab}`).classList.add('active');
+  document.getElementById('main').scrollTop = 0;
+  if (tab === 'Logs') loadLogs(false);
+  if (tab === 'Training') { loadTraining(); loadGroups(); }
+}
+
+function flipToggle(id) { document.getElementById(id).classList.toggle('on'); }
+
+function setMode(mode) {
+  replyMode = mode;
+  ['questions','all','keywords'].forEach(m =>
+    document.getElementById(`mode${m.charAt(0).toUpperCase()+m.slice(1)}`).classList.toggle('active', m === mode));
+  document.getElementById('keywordsSection').style.display = mode === 'keywords' ? 'block' : 'none';
+}
+
+function setDelay(d) {
+  replyDelay = d;
+  [0,3,5,10].forEach(v => document.getElementById(`delay${v}`).classList.toggle('active', v === d));
+}
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  ['starter','pro','empire'].forEach(p =>
+    document.getElementById(`plan${p.charAt(0).toUpperCase()+p.slice(1)}`).classList.toggle('selected', p === plan));
+}
+
+function setPayMethod(method) {
+  payMethod = method;
+  document.getElementById('payUSDT').classList.toggle('active', method === 'crypto');
+  document.getElementById('payNGN').classList.toggle('active', method === 'bank');
+  document.getElementById('payInfo').textContent = PAY_INFO[method];
+}
+
+async function loadUser() {
+  try {
+    const data = await apiFetch('/api/ta/me');
+    if (!data.success) { logout(); return; }
+    userData = data.user;
+    document.getElementById('navUser').textContent = userData.name.split(' ')[0];
+    document.getElementById('navBadge').textContent = userData.plan.toUpperCase();
+    document.getElementById('navBadge').className = `plan-badge badge-${userData.plan}`;
+    if (data.sessions && data.sessions.length > 0) {
+      sessionData = data.sessions[0];
+      showConnectedUI();
+      loadAgentStatus();
+      initSSE(); // 🔥 start SSE realtime
+      const s = sessionData;
+      if (s.reply_mode) setMode(s.reply_mode);
+      if (s.reply_delay !== undefined) setDelay(s.reply_delay);
+      if (s.keywords) document.getElementById('keywordsInput').value = s.keywords;
+      if (s.greeting_message) document.getElementById('greetingInput').value = s.greeting_message;
+      if (s.groups_enabled !== undefined) document.getElementById('toggleGroups').className = `toggle ${s.groups_enabled?'on':''}`;
+      if (s.dms_enabled !== undefined) document.getElementById('toggleDMs').className = `toggle ${s.dms_enabled?'on':''}`;
+      if (s.delete_links !== undefined) document.getElementById('toggleLinks').className = `toggle ${s.delete_links?'on':''}`;
+      if (s.greeting_enabled !== undefined) document.getElementById('toggleGreeting').className = `toggle ${s.greeting_enabled?'on':''}`;
+    } else {
+      document.getElementById('onboardSection').style.display = 'block';
+    }
+    setPayMethod('crypto');
+  } catch(e) { logout(); }
+}
+
+function showConnectedUI() {
+  document.getElementById('onboardSection').style.display = 'none';
+  document.getElementById('agentSection').style.display = 'block';
+  document.getElementById('connectSection').style.display = 'none';
+  if (sessionData) {
+    document.getElementById('agentNameText').textContent = sessionData.agent_name || 'TeleAgent';
+    document.getElementById('statPlatform').textContent = sessionData.platform_name ? sessionData.platform_name.substring(0,6) : '—';
+    document.getElementById('startBtn').disabled = false;
+  }
+}
+
+async function loadAgentStatus() {
+  if (!sessionData) return;
+  try {
+    const data = await apiFetch(`/api/ta/agent/status?session_id=${sessionData.id}`);
+    if (!data.success) return;
+    isRunning = data.is_running || data.session?.status === 'active';
+    totalReplies = data.total_replies || 0;
+    updateAgentUI(isRunning, totalReplies);
+  } catch(e) {}
+}
+
+function updateAgentUI(running, replies=totalReplies) {
+  const ring = document.getElementById('statusRing');
+  const label = document.getElementById('agentStatusLabel');
+  const btn = document.getElementById('startBtn');
+  ring.className = `status-ring ${running?'on':'off'}`;
+  label.textContent = running ? 'Online — actively replying' : 'Offline';
+  label.className = `agent-status-label ${running?'status-on':'status-off'}`;
+  btn.className = `ctrl-btn ${running?'btn-stop':'btn-start'}`;
+  btn.innerHTML = running
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop`
+    : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
+  document.getElementById('statReplies').textContent = replies;
+  document.getElementById('statStatus').textContent = running ? 'ON' : 'OFF';
+}
+
+async function toggleAgent() {
+  if (!sessionData) return;
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  try {
+    const ep = isRunning ? '/api/ta/agent/stop' : '/api/ta/agent/start';
+    const data = await apiFetch(ep, 'POST', {session_id: sessionData.id});
+    if (data.success) {
+      isRunning = !isRunning;
+      updateAgentUI(isRunning);
+      showToast(data.message, 'success');
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function disconnectAccount() {
+  if (!sessionData) return;
+  if (!confirm('Disconnect your Telegram account from TeleAgent?')) return;
+  try {
+    const data = await apiFetch('/api/ta/agent/disconnect', 'POST', {session_id: sessionData.id});
+    if (data.success) {
+      showToast('Disconnected!', 'success');
+      stopSSE();
+      sessionData = null; isRunning = false; totalReplies = 0;
+      document.getElementById('agentSection').style.display = 'none';
+      document.getElementById('connectSection').style.display = 'block';
+      document.getElementById('onboardSection').style.display = 'block';
+      resetConnect();
+    }
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function sendCode() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const platform = document.getElementById('platformInput').value.trim();
+  if (!phone) { showToast('Enter phone number', 'error'); return; }
+  if (!platform) { showToast('Enter your platform name', 'error'); return; }
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const data = await apiFetch('/api/ta/telegram/send-code', 'POST', {phone});
+    if (data.success) {
+      phoneCodeHash = data.phone_code_hash;
+      currentPhone = phone;
+      document.getElementById('stepPhone').style.display = 'none';
+      document.getElementById('stepOTP').style.display = 'block';
+      document.getElementById('step1').className = 'step done';
+      document.getElementById('step2').className = 'step active-step';
+      showToast('Code sent! Check Telegram ✅', 'success');
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> SEND VERIFICATION CODE'; }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('otpInput').value.trim();
+  const twoFA = document.getElementById('twoFAInput').value.trim();
+  const platform = document.getElementById('platformInput').value.trim();
+  if (!code) { showToast('Enter the code', 'error'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const body = {phone: currentPhone, code, phone_code_hash: phoneCodeHash, platform_name: platform};
+    if (twoFA) body.password = twoFA;
+    const data = await apiFetch('/api/ta/telegram/verify', 'POST', body);
+    if (data.success) {
+      document.getElementById('step2').className = 'step done';
+      document.getElementById('step3').className = 'step done';
+      document.getElementById('stepOTP').style.display = 'none';
+      document.getElementById('stepDone').style.display = 'block';
+      document.getElementById('connectedLabel').textContent = `Connected as ${data.tg_name}!`;
+      showToast(data.message, 'success');
+      setTimeout(() => loadUser(), 1500);
+    } else if (data.error === '2FA_REQUIRED') {
+      document.getElementById('twoFASection').style.display = 'block';
+      document.getElementById('otpHint').textContent = 'Enter your 2FA password below.';
+      showToast('2FA required', 'error');
+    } else showToast(data.error || 'Wrong code', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> VERIFY & CONNECT'; }
+}
+
+function resetConnect() {
+  document.getElementById('stepPhone').style.display = 'block';
+  document.getElementById('stepOTP').style.display = 'none';
+  document.getElementById('stepDone').style.display = 'none';
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('step1').className = 'step active-step';
+  document.getElementById('step2').className = 'step pending-step';
+  document.getElementById('step3').className = 'step pending-step';
+}
+
+async function saveSettings() {
+  if (!sessionData) { showToast('Connect account first', 'error'); return; }
+  const body = {
+    session_id: sessionData.id,
+    reply_mode: replyMode, reply_delay: replyDelay,
+    keywords: document.getElementById('keywordsInput').value.trim(),
+    groups_enabled: document.getElementById('toggleGroups').classList.contains('on'),
+    dms_enabled: document.getElementById('toggleDMs').classList.contains('on'),
+    delete_links: document.getElementById('toggleLinks').classList.contains('on'),
+    greeting_enabled: document.getElementById('toggleGreeting').classList.contains('on'),
+    greeting_message: document.getElementById('greetingInput').value.trim()
+  };
+  try {
+    const data = await apiFetch('/api/ta/agent/settings', 'POST', body);
+    if (data.success) showToast('Settings saved! ✅', 'success');
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function trainAgent() {
+  if (!sessionData) { showToast('Connect account first', 'error'); return; }
+  const info = document.getElementById('trainingInput').value.trim();
+  if (!info) { showToast('Enter training information', 'error'); return; }
+  try {
+    const data = await apiFetch('/api/ta/agent/train', 'POST', {session_id: sessionData.id, info});
+    if (data.success) {
+      showToast('AI updated! ✅', 'success');
+      document.getElementById('trainingInput').value = '';
+      const me = await apiFetch('/api/ta/me');
+      if (me.success && me.sessions?.length) { sessionData = me.sessions[0]; loadTraining(); }
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+function loadTraining() {
+  if (!sessionData) return;
+  document.getElementById('trainingHistory').textContent = sessionData.training_data || 'No training data yet.';
+}
+
+async function loadGroups() {
+  if (!sessionData) { document.getElementById('groupsList').innerHTML = '<div class="loading">Connect account first</div>'; return; }
+  document.getElementById('groupsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await apiFetch(`/api/ta/agent/groups?session_id=${sessionData.id}`);
+    const groups = data.groups || [];
+    if (!groups.length) { document.getElementById('groupsList').innerHTML = '<div class="empty-state"><div style="font-size:13px;">No admin groups found.</div></div>'; return; }
+    document.getElementById('groupsList').innerHTML = groups.map(g => `
+      <div class="group-item">
+        <div class="group-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="group-info-wrap">
+          <div class="group-name-text">${g.name}</div>
+          <div class="group-meta">${g.members?g.members.toLocaleString()+' members':''} <span class="group-type-badge">${g.type}</span></div>
+        </div>
+      </div>`).join('');
+  } catch(e) { document.getElementById('groupsList').innerHTML = '<div class="loading">Failed to load</div>'; }
+}
+
+async function loadLogs(silent=false) {
+  if (!sessionData) { document.getElementById('logsList').innerHTML = '<div class="loading">Connect account first</div>'; return; }
+  if (!silent) document.getElementById('logsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await apiFetch(`/api/ta/agent/logs?session_id=${sessionData.id}&limit=30`);
+    const logs = data.logs || [];
+    totalReplies = logs.length;
+    document.getElementById('statReplies').textContent = totalReplies;
+    if (!logs.length) {
+      document.getElementById('logsList').innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:10px;">💬</div><div style="font-size:13px;">No messages yet. Start your agent!</div></div>';
+      return;
+    }
+    document.getElementById('logsList').innerHTML = logs.map(l => `
+      <div class="log-item">
+        <div class="log-icon-wrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="log-details">
+          <div class="log-chat-name">${l.chat_name||'Unknown'}</div>
+          <div class="log-in">← ${l.incoming_message}</div>
+          <div class="log-out">→ ${l.ai_reply}</div>
+          <div class="log-time-text">${new Date(l.created_at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { if (!silent) document.getElementById('logsList').innerHTML = '<div class="loading">Failed to load</div>'; }
+}
+
+let payScreenshotBase64 = null;
+function previewScreenshot(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    payScreenshotBase64 = e.target.result;
+    document.getElementById('screenshotPreview').src = payScreenshotBase64;
+    document.getElementById('screenshotPreview').style.display = 'block';
+    document.getElementById('screenshotBox').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitUpgrade() {
+  if (!payScreenshotBase64) { showToast('Please upload payment screenshot', 'error'); return; }
+  try {
+    const data = await apiFetch('/api/ta/upgrade', 'POST', {plan: selectedPlan, payment_screenshot: payScreenshotBase64, method: payMethod});
+    if (data.success) {
+      showToast(data.message, 'success');
+      payScreenshotBase64 = null;
+      document.getElementById('screenshotPreview').style.display = 'none';
+      document.getElementById('screenshotBox').style.display = 'block';
+      document.getElementById('payScreenshot').value = '';
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+function logout() {
+  stopSSE();
+  localStorage.removeItem('ta_token');
+  localStorage.removeItem('ta_user');
+  window.location.href = 'login.html';
+}
+
+loadUser();
+loadPaySettings();
+</script>
+if (!token) window.location.href = 'login.html';
+
+let userData = null, sessionData = null;
+let phoneCodeHash = null, currentPhone = null;
+let isRunning = false, selectedPlan = 'starter', payMethod = 'crypto';
+let replyMode = 'questions', replyDelay = 3;
+let supaRealtime = null, realtimeChannels = [];
+let totalReplies = 0;
+
+const PAY_INFO = {
+  crypto: 'Network: TRC20 (USDT)\nWallet: Loading...\n\nSend exact amount and upload screenshot.',
+  bank: 'Bank: Loading...\n\nSend exact amount and upload screenshot.'
+};
+
+// ── SUPABASE REALTIME ──────────────────────────────
+function initRealtime() {
+  if (!sessionData) return;
+  const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+  // Unsubscribe old channels
+  realtimeChannels.forEach(c => sb.removeChannel(c));
+  realtimeChannels = [];
+
+  // 1. Watch teleagent_logs → new message comes in
+  const logsCh = sb.channel(`logs-${sessionData.id}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'teleagent_logs',
+      filter: `session_id=eq.${sessionData.id}`
+    }, payload => {
+      totalReplies++;
+      document.getElementById('statReplies').textContent = totalReplies;
+      // If logs tab is open, prepend new log instantly
+      if (document.getElementById('panelLogs').classList.contains('active')) {
+        prependLog(payload.new);
+      }
+    })
+    .subscribe();
+
+  // 2. Watch teleagent_sessions → agent status changes
+  const sessionCh = sb.channel(`session-${sessionData.id}`)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'teleagent_sessions',
+      filter: `id=eq.${sessionData.id}`
+    }, payload => {
+      const s = payload.new;
+      isRunning = s.status === 'active';
+      updateAgentUI(isRunning);
+    })
+    .subscribe();
+
+  realtimeChannels = [logsCh, sessionCh];
+}
+
+function prependLog(l) {
+  const list = document.getElementById('logsList');
+  // Remove empty state if present
+  const empty = list.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.style.animation = 'fadeIn 0.3s ease';
+  div.innerHTML = `
+    <div class="log-icon-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div class="log-details">
+      <div class="log-chat-name">${l.chat_name || 'Unknown'}</div>
+      <div class="log-in">← ${l.incoming_message}</div>
+      <div class="log-out">→ ${l.ai_reply}</div>
+      <div class="log-time-text">${new Date(l.created_at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`;
+  list.insertBefore(div, list.firstChild);
+}
+
+// ── HEARTBEAT ──────────────────────────────────────
+function startHeartbeat() {
+  // Lightweight ping every 25s — keeps connection alive + updates last_seen
+  setInterval(async () => {
+    if (!sessionData) return;
+    try {
+      const data = await apiFetch(`/api/ta/agent/status?session_id=${sessionData.id}`);
+      if (data.success) {
+        const running = data.is_running || data.session?.status === 'active';
+        if (running !== isRunning) {
+          isRunning = running;
+          updateAgentUI(isRunning, data.total_replies || totalReplies);
+        }
+      }
+    } catch(e) {}
+  }, 25000);
+}
+
+// ── API ────────────────────────────────────────────
+async function apiFetch(ep, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`} };
+  if (body) opts.body = JSON.stringify(body);
+  return (await fetch(`${API}${ep}`, opts)).json();
+}
+
+async function loadPaySettings() {
+  try {
+    const data = await apiFetch('/api/ta/pay-settings');
+    if (data.success && data.settings) {
+      const s = data.settings;
+      PAY_INFO.crypto = `Network: TRC20 (USDT)\nWallet: ${s.crypto || 'Contact admin'}\n\nSend exact amount and upload screenshot.`;
+      PAY_INFO.bank = `Bank: ${s.bank_name || 'Contact admin'}\nAccount: ${s.account_num || '—'}\nName: ${s.account_name || '—'}\n\nSend exact amount and upload screenshot.`;
+    }
+  } catch(e) {}
+  setPayMethod('crypto');
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => { t.className = 'toast'; }, 400);
+  }, 3000);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel${tab}`).classList.add('active');
+  document.getElementById(`tab${tab}`).classList.add('active');
+  document.getElementById('main').scrollTop = 0;
+  if (tab === 'Logs') loadLogs(false);
+  if (tab === 'Training') { loadTraining(); loadGroups(); }
+}
+
+function flipToggle(id) { document.getElementById(id).classList.toggle('on'); }
+
+function setMode(mode) {
+  replyMode = mode;
+  ['questions','all','keywords'].forEach(m =>
+    document.getElementById(`mode${m.charAt(0).toUpperCase()+m.slice(1)}`).classList.toggle('active', m === mode));
+  document.getElementById('keywordsSection').style.display = mode === 'keywords' ? 'block' : 'none';
+}
+
+function setDelay(d) {
+  replyDelay = d;
+  [0,3,5,10].forEach(v => document.getElementById(`delay${v}`).classList.toggle('active', v === d));
+}
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  ['starter','pro','empire'].forEach(p =>
+    document.getElementById(`plan${p.charAt(0).toUpperCase()+p.slice(1)}`).classList.toggle('selected', p === plan));
+}
+
+function setPayMethod(method) {
+  payMethod = method;
+  document.getElementById('payUSDT').classList.toggle('active', method === 'crypto');
+  document.getElementById('payNGN').classList.toggle('active', method === 'bank');
+  document.getElementById('payInfo').textContent = PAY_INFO[method];
+}
+
+async function loadUser() {
+  try {
+    const data = await apiFetch('/api/ta/me');
+    if (!data.success) { logout(); return; }
+    userData = data.user;
+    document.getElementById('navUser').textContent = userData.name.split(' ')[0];
+    document.getElementById('navBadge').textContent = userData.plan.toUpperCase();
+    document.getElementById('navBadge').className = `plan-badge badge-${userData.plan}`;
+    if (data.sessions && data.sessions.length > 0) {
+      sessionData = data.sessions[0];
+      showConnectedUI();
+      loadAgentStatus();
+      initRealtime(); // 🔥 start realtime
+      startHeartbeat(); // 🔥 start heartbeat
+      const s = sessionData;
+      if (s.reply_mode) setMode(s.reply_mode);
+      if (s.reply_delay !== undefined) setDelay(s.reply_delay);
+      if (s.keywords) document.getElementById('keywordsInput').value = s.keywords;
+      if (s.greeting_message) document.getElementById('greetingInput').value = s.greeting_message;
+      if (s.groups_enabled !== undefined) document.getElementById('toggleGroups').className = `toggle ${s.groups_enabled?'on':''}`;
+      if (s.dms_enabled !== undefined) document.getElementById('toggleDMs').className = `toggle ${s.dms_enabled?'on':''}`;
+      if (s.delete_links !== undefined) document.getElementById('toggleLinks').className = `toggle ${s.delete_links?'on':''}`;
+      if (s.greeting_enabled !== undefined) document.getElementById('toggleGreeting').className = `toggle ${s.greeting_enabled?'on':''}`;
+    } else {
+      document.getElementById('onboardSection').style.display = 'block';
+    }
+    setPayMethod('crypto');
+  } catch(e) { logout(); }
+}
+
+function showConnectedUI() {
+  document.getElementById('onboardSection').style.display = 'none';
+  document.getElementById('agentSection').style.display = 'block';
+  document.getElementById('connectSection').style.display = 'none';
+  if (sessionData) {
+    document.getElementById('agentNameText').textContent = sessionData.agent_name || 'TeleAgent';
+    document.getElementById('statPlatform').textContent = sessionData.platform_name ? sessionData.platform_name.substring(0,6) : '—';
+    document.getElementById('startBtn').disabled = false;
+  }
+}
+
+async function loadAgentStatus() {
+  if (!sessionData) return;
+  try {
+    const data = await apiFetch(`/api/ta/agent/status?session_id=${sessionData.id}`);
+    if (!data.success) return;
+    isRunning = data.is_running || data.session?.status === 'active';
+    totalReplies = data.total_replies || 0;
+    updateAgentUI(isRunning, totalReplies);
+  } catch(e) {}
+}
+
+function updateAgentUI(running, replies=totalReplies) {
+  const ring = document.getElementById('statusRing');
+  const label = document.getElementById('agentStatusLabel');
+  const btn = document.getElementById('startBtn');
+  ring.className = `status-ring ${running?'on':'off'}`;
+  label.textContent = running ? 'Online — actively replying' : 'Offline';
+  label.className = `agent-status-label ${running?'status-on':'status-off'}`;
+  btn.className = `ctrl-btn ${running?'btn-stop':'btn-start'}`;
+  btn.innerHTML = running
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop`
+    : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
+  document.getElementById('statReplies').textContent = replies;
+  document.getElementById('statStatus').textContent = running ? 'ON' : 'OFF';
+}
+
+async function toggleAgent() {
+  if (!sessionData) return;
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  try {
+    const ep = isRunning ? '/api/ta/agent/stop' : '/api/ta/agent/start';
+    const data = await apiFetch(ep, 'POST', {session_id: sessionData.id});
+    if (data.success) {
+      isRunning = !isRunning;
+      updateAgentUI(isRunning);
+      showToast(data.message, 'success');
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function disconnectAccount() {
+  if (!sessionData) return;
+  if (!confirm('Disconnect your Telegram account from TeleAgent?')) return;
+  try {
+    const data = await apiFetch('/api/ta/agent/disconnect', 'POST', {session_id: sessionData.id});
+    if (data.success) {
+      showToast('Disconnected!', 'success');
+      // Unsubscribe realtime
+      realtimeChannels.forEach(c => { try { c.unsubscribe(); } catch(e) {} });
+      realtimeChannels = [];
+      sessionData = null; isRunning = false; totalReplies = 0;
+      document.getElementById('agentSection').style.display = 'none';
+      document.getElementById('connectSection').style.display = 'block';
+      document.getElementById('onboardSection').style.display = 'block';
+      resetConnect();
+    }
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+// ── CONNECT FLOW ───────────────────────────────────
+async function sendCode() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const platform = document.getElementById('platformInput').value.trim();
+  if (!phone) { showToast('Enter phone number', 'error'); return; }
+  if (!platform) { showToast('Enter your platform name', 'error'); return; }
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const data = await apiFetch('/api/ta/telegram/send-code', 'POST', {phone});
+    if (data.success) {
+      phoneCodeHash = data.phone_code_hash;
+      currentPhone = phone;
+      document.getElementById('stepPhone').style.display = 'none';
+      document.getElementById('stepOTP').style.display = 'block';
+      document.getElementById('step1').className = 'step done';
+      document.getElementById('step2').className = 'step active-step';
+      showToast('Code sent! Check Telegram ✅', 'success');
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> SEND VERIFICATION CODE'; }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('otpInput').value.trim();
+  const twoFA = document.getElementById('twoFAInput').value.trim();
+  const platform = document.getElementById('platformInput').value.trim();
+  if (!code) { showToast('Enter the code', 'error'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const body = {phone: currentPhone, code, phone_code_hash: phoneCodeHash, platform_name: platform};
+    if (twoFA) body.password = twoFA;
+    const data = await apiFetch('/api/ta/telegram/verify', 'POST', body);
+    if (data.success) {
+      document.getElementById('step2').className = 'step done';
+      document.getElementById('step3').className = 'step done';
+      document.getElementById('stepOTP').style.display = 'none';
+      document.getElementById('stepDone').style.display = 'block';
+      document.getElementById('connectedLabel').textContent = `Connected as ${data.tg_name}!`;
+      showToast(data.message, 'success');
+      setTimeout(() => loadUser(), 1500);
+    } else if (data.error === '2FA_REQUIRED') {
+      document.getElementById('twoFASection').style.display = 'block';
+      document.getElementById('otpHint').textContent = 'Enter your 2FA password below.';
+      showToast('2FA required', 'error');
+    } else showToast(data.error || 'Wrong code', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> VERIFY & CONNECT'; }
+}
+
+function resetConnect() {
+  document.getElementById('stepPhone').style.display = 'block';
+  document.getElementById('stepOTP').style.display = 'none';
+  document.getElementById('stepDone').style.display = 'none';
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('step1').className = 'step active-step';
+  document.getElementById('step2').className = 'step pending-step';
+  document.getElementById('step3').className = 'step pending-step';
+}
+
+async function saveSettings() {
+  if (!sessionData) { showToast('Connect account first', 'error'); return; }
+  const body = {
+    session_id: sessionData.id,
+    reply_mode: replyMode, reply_delay: replyDelay,
+    keywords: document.getElementById('keywordsInput').value.trim(),
+    groups_enabled: document.getElementById('toggleGroups').classList.contains('on'),
+    dms_enabled: document.getElementById('toggleDMs').classList.contains('on'),
+    delete_links: document.getElementById('toggleLinks').classList.contains('on'),
+    greeting_enabled: document.getElementById('toggleGreeting').classList.contains('on'),
+    greeting_message: document.getElementById('greetingInput').value.trim()
+  };
+  try {
+    const data = await apiFetch('/api/ta/agent/settings', 'POST', body);
+    if (data.success) showToast('Settings saved! ✅', 'success');
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function trainAgent() {
+  if (!sessionData) { showToast('Connect account first', 'error'); return; }
+  const info = document.getElementById('trainingInput').value.trim();
+  if (!info) { showToast('Enter training information', 'error'); return; }
+  try {
+    const data = await apiFetch('/api/ta/agent/train', 'POST', {session_id: sessionData.id, info});
+    if (data.success) {
+      showToast('AI updated! ✅', 'success');
+      document.getElementById('trainingInput').value = '';
+      // Reload session data to get updated training
+      const me = await apiFetch('/api/ta/me');
+      if (me.success && me.sessions?.length) {
+        sessionData = me.sessions[0];
+        loadTraining();
+      }
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+function loadTraining() {
+  if (!sessionData) return;
+  document.getElementById('trainingHistory').textContent = sessionData.training_data || 'No training data yet.';
+}
+
+async function loadGroups() {
+  if (!sessionData) { document.getElementById('groupsList').innerHTML = '<div class="loading">Connect account first</div>'; return; }
+  document.getElementById('groupsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await apiFetch(`/api/ta/agent/groups?session_id=${sessionData.id}`);
+    const groups = data.groups || [];
+    if (!groups.length) { document.getElementById('groupsList').innerHTML = '<div class="empty-state"><div style="font-size:13px;">No admin groups found.</div></div>'; return; }
+    document.getElementById('groupsList').innerHTML = groups.map(g => `
+      <div class="group-item">
+        <div class="group-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="group-info-wrap">
+          <div class="group-name-text">${g.name}</div>
+          <div class="group-meta">${g.members ? g.members.toLocaleString() + ' members' : ''} <span class="group-type-badge">${g.type}</span></div>
+        </div>
+      </div>`).join('');
+  } catch(e) { document.getElementById('groupsList').innerHTML = '<div class="loading">Failed to load</div>'; }
+}
+
+async function loadLogs(silent=false) {
+  if (!sessionData) { document.getElementById('logsList').innerHTML = '<div class="loading">Connect account first</div>'; return; }
+  if (!silent) document.getElementById('logsList').innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const data = await apiFetch(`/api/ta/agent/logs?session_id=${sessionData.id}&limit=30`);
+    const logs = data.logs || [];
+    totalReplies = logs.length;
+    document.getElementById('statReplies').textContent = totalReplies;
+    if (!logs.length) {
+      document.getElementById('logsList').innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:10px;">💬</div><div style="font-size:13px;">No messages yet. Start your agent!</div></div>';
+      return;
+    }
+    document.getElementById('logsList').innerHTML = logs.map(l => `
+      <div class="log-item">
+        <div class="log-icon-wrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="log-details">
+          <div class="log-chat-name">${l.chat_name || 'Unknown'}</div>
+          <div class="log-in">← ${l.incoming_message}</div>
+          <div class="log-out">→ ${l.ai_reply}</div>
+          <div class="log-time-text">${new Date(l.created_at).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { if (!silent) document.getElementById('logsList').innerHTML = '<div class="loading">Failed to load</div>'; }
+}
+
+let payScreenshotBase64 = null;
+function previewScreenshot(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    payScreenshotBase64 = e.target.result;
+    document.getElementById('screenshotPreview').src = payScreenshotBase64;
+    document.getElementById('screenshotPreview').style.display = 'block';
+    document.getElementById('screenshotBox').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitUpgrade() {
+  if (!payScreenshotBase64) { showToast('Please upload payment screenshot', 'error'); return; }
+  try {
+    const data = await apiFetch('/api/ta/upgrade', 'POST', {plan: selectedPlan, payment_screenshot: payScreenshotBase64, method: payMethod});
+    if (data.success) {
+      showToast(data.message, 'success');
+      payScreenshotBase64 = null;
+      document.getElementById('screenshotPreview').style.display = 'none';
+      document.getElementById('screenshotBox').style.display = 'block';
+      document.getElementById('payScreenshot').value = '';
+    } else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+function logout() {
+  localStorage.removeItem('ta_token');
+  localStorage.removeItem('ta_user');
+  window.location.href = 'login.html';
+}
+
+// ── INIT ───────────────────────────────────────────
+loadUser();
+loadPaySettings();
+</script>
+</body>
+</html>
