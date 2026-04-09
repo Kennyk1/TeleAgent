@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>TeleAgent — Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  /* Reset and base */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+  }
+  html, body {
+    height: 100%;
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.4;
+  }
+  input, select, textarea, button {
+    font-size: 16px; /* Prevent zoom on focus in mobile browsers */
+  }
+
+  /* CSS variables */
+  :root {
+    --bg:#050510;
+    --card:#0d0d22;
+    --border:rgba(123,97,255,0.15);
+    --purple:#7B61FF;
+    --cyan:#00D4FF;
+    --text:#e8e8ff;
+    --muted:#5a5a8a;
+    --green:#00ff88;
+    --red:#ff4444;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(123,97,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(123,97,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Wrapper */
+  .wrap {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  /* Logo */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  /* Card */
+  .card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 24px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    align-items: center;
+    margin-bottom: 26px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .step-dot.done {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: #fff;
+  }
+  .step-dot.cur {
+    background: rgba(123,97,255,0.15);
+    border: 2px solid var(--purple);
+    color: var(--purple);
+  }
+  .step-dot.wait {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--muted);
+  }
+  .step-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .step-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 18px;
+  }
+
+  /* Labels */
+  .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 7px;
+  }
+
+  /* Inputs */
+  .input {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+  }
+  .input:focus {
+    border-color: rgba(123,97,255,0.5);
+  }
+  .input::placeholder {
+    color: var(--muted);
+  }
+  .input.otp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+    letter-spacing: 0.25em;
+    text-align: center;
+  }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+    letter-spacing: 0.03em;
+  }
+  .btn:active {
+    opacity: 0.8;
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple), #9b85ff);
+    color: #fff;
+  }
+  .btn-github {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 11px;
+  }
+
+  /* Success card */
+  .success-card {
+    text-align: center;
+    padding: 10px 0;
+  }
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(0,255,136,0.08);
+    border: 2px solid rgba(0,255,136,0.3);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .success-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .success-sub {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* GitHub status */
+  .github-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    margin-bottom: 10px;
+  }
+  .gh-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .gh-dot.on {
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(0,255,136,0.4);
+  }
+  .gh-dot.off {
+    background: var(--muted);
+  }
+  .gh-info {
+    flex: 1;
+  }
+  .gh-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .gh-sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.25s;
+    z-index: 300;
+    white-space: nowrap;
+    opacity: 0;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast.error {
+    border-color: rgba(255,68,68,0.4);
+    color: #ff7070;
+  }
+  .toast.success {
+    border-color: rgba(0,255,136,0.3);
+    color: var(--green);
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <div class="logo-text">TeleAgent</div>
+  </div>
+
+  <div class="card">
+    <div class="steps">
+      <div class="step"><div class="step-dot cur" id="dot1">1</div><div class="step-label">Phone</div></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot wait" id="dot2">2</div><div class="step-label">Verify</div></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot wait" id="dot3">3</div><div class="step-label">Setup</div></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="s1">
+      <div class="card-title">Connect Telegram</div>
+      <div class="card-sub">Enter your phone number to get started. No account needed.</div>
+      <label class="label">Phone Number</label>
+      <input type="tel" class="input" id="phoneInput" placeholder="+2348012345678" autocomplete="tel"/>
+      <button class="btn btn-primary" id="sendBtn" onclick="sendCode()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Code
+      </button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="s2" style="display:none;">
+      <div class="card-title">Enter Code</div>
+      <div class="card-sub">Check your Telegram app for the verification code.</div>
+      <label class="label">Code</label>
+      <input type="text" class="input otp" id="otpInput" placeholder="12345" maxlength="5" autocomplete="one-time-code"/>
+      <div id="twoFAWrap" style="display:none;">
+        <label class="label">2FA Password</label>
+        <input type="password" class="input" id="twoFAInput" placeholder="Your 2FA password" autocomplete="current-password"/>
+      </div>
+      <button class="btn btn-primary" id="verifyBtn" onclick="verifyCode()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Verify & Continue
+      </button>
+      <button class="btn btn-ghost" onclick="goStep(1)">← Change Number</button>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="s3" style="display:none;">
+      <div class="card-title">Setup Your Agent</div>
+      <div class="card-sub">Give your AI a name and tell it what to call you.</div>
+      <label class="label">AI Name (what it responds to)</label>
+      <input type="text" class="input" id="agentName" placeholder="e.g. Maya, Nova, Rex..." autocomplete="off"/>
+      <label class="label">Your Name (what AI calls you)</label>
+      <input type="text" class="input" id="userName" placeholder="e.g. Boss, Kenny, Chief..." autocomplete="off"/>
+      <label class="label">Platform Name (optional)</label>
+      <input type="text" class="input" id="platformName" placeholder="e.g. Zaparo, MyApp..." autocomplete="off"/>
+      <button class="btn btn-primary" id="setupBtn" onclick="finishSetup()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Launch Agent
+      </button>
+    </div>
+
+    <!-- STEP 4: Done -->
+    <div id="s4" style="display:none;">
+      <div class="success-card">
+        <div class="success-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="success-title">Agent is Live! 🔥</div>
+        <div class="success-sub" id="successMsg">Your AI agent is running on Telegram!</div>
+        <div class="github-status">
+          <div class="gh-dot off" id="ghDot"></div>
+          <div class="gh-info">
+            <div class="gh-label" id="ghLabel">GitHub Not Connected</div>
+            <div class="gh-sub" id="ghSub">Connect to create repos & deploy sites</div>
+          </div>
+        </div>
+        <button class="btn btn-github" id="ghBtn" onclick="connectGithub()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          Connect GitHub
+        </button>
+        <button class="btn btn-ghost" onclick="restart()">Connect Another Number</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://sample-api-1-ryj7.onrender.com';
+let phoneCodeHash = null, currentPhone = null;
+let token = localStorage.getItem('ta_token');
+let sessionId = localStorage.getItem('ta_session_id');
+
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3000);
+}
+
+function goStep(n) {
+  [1,2,3,4].forEach(i => document.getElementById(`s${i}`).style.display = i===n ? 'block' : 'none');
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById(`dot${i}`);
+    if (i < n) { dot.className = 'step-dot done'; dot.textContent = '✓'; }
+    else if (i === n) { dot.className = 'step-dot cur'; dot.textContent = i; }
+    else { dot.className = 'step-dot wait'; dot.textContent = i; }
+  });
+}
+
+async function sendCode() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) { toast('Enter your phone number', 'error'); return; }
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const res = await fetch(`${API}/api/ta/telegram/send-code`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone})
+    });
+    const data = await res.json();
+    if (data.success) {
+      phoneCodeHash = data.phone_code_hash; currentPhone = phone;
+      goStep(2); toast('Code sent! Check Telegram ✅');
+    } else toast(data.error || 'Failed', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Code';
+}
+
+async function verifyCode() {
+  const code = document.getElementById('otpInput').value.trim();
+  const twoFA = document.getElementById('twoFAInput').value.trim();
+  if (!code) { toast('Enter the code', 'error'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const body = {phone: currentPhone, code, phone_code_hash: phoneCodeHash};
+    if (twoFA) body.password = twoFA;
+    const res = await fetch(`${API}/api/ta/telegram/verify`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      token = data.token; sessionId = data.session_id;
+      goStep(3); toast(`Welcome ${data.tg_name}! 🎉`);
+    } else if (data.error === '2FA_REQUIRED') {
+      document.getElementById('twoFAWrap').style.display = 'block';
+      toast('Enter your 2FA password', 'error');
+    } else toast(data.error || 'Wrong code', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Verify & Continue';
+}
+
+async function finishSetup() {
+  const agentNickname = document.getElementById('agentName').value.trim() || 'TeleAgent';
+  const userNickname = document.getElementById('userName').value.trim() || 'Boss';
+  const platformName = document.getElementById('platformName').value.trim();
+  const btn = document.getElementById('setupBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    await fetch(`${API}/api/ta/agent/settings`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+      body: JSON.stringify({agent_nickname: agentNickname, user_nickname: userNickname, platform_name: platformName})
+    });
+    localStorage.setItem('ta_token', token);
+    localStorage.setItem('ta_session_id', sessionId);
+    document.getElementById('successMsg').textContent =
+      `${agentNickname} is live! Talk to it on Telegram — it'll call you ${userNickname} 🔥`;
+    goStep(4);
+    loadGithubStatus();
+    toast('Agent launched! 🚀');
+  } catch(e) { toast('Network error', 'error'); }
+  btn.disabled = false;
+}
+
+async function loadGithubStatus() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API}/api/ta/github/status`, {headers: {'Authorization': `Bearer ${token}`}});
+    const data = await res.json();
+    if (data.connected) {
+      document.getElementById('ghDot').className = 'gh-dot on';
+      document.getElementById('ghLabel').textContent = `@${data.username}`;
+      document.getElementById('ghSub').textContent = `${data.repo_count} repositories`;
+      const btn = document.getElementById('ghBtn');
+      btn.innerHTML = '✓ GitHub Connected';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'rgba(0,255,136,0.2)';
+      btn.onclick = null;
+    }
+  } catch(e) {}
+}
+
+async function connectGithub() {
+  if (!token) { toast('Connect Telegram first', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/api/ta/github/connect`, {headers: {'Authorization': `Bearer ${token}`}});
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  } catch(e) { toast('Failed', 'error'); }
+}
+
+function restart() {
+  localStorage.removeItem('ta_token');
+  localStorage.removeItem('ta_session_id');
+  token = null; sessionId = null;
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('agentName').value = '';
+  document.getElementById('userName').value = '';
+  goStep(1);
+}
+
+// Init
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('github') === 'connected') {
+    window.history.replaceState({}, '', '/');
+    token = localStorage.getItem('ta_token');
+    if (token) { goStep(4); loadGithubStatus(); toast(`GitHub connected as @${params.get('username')} ✅`); return; }
+  }
+  if (params.get('error') === 'github_failed') {
+    toast('GitHub connection failed', 'error');
+    window.history.replaceState({}, '', '/');
+  }
+  // Already connected
+  if (token && sessionId) { goStep(4); loadGithubStatus(); }
+});
+</script>
+</body>
+</html>
