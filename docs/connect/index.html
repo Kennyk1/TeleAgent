@@ -1,274 +1,1016 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>TeleAgent — Connect</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#050510;--card:#0d0d22;--border:rgba(123,97,255,0.15);--purple:#7B61FF;--cyan:#00D4FF;--text:#e8e8ff;--muted:#5a5a8a;--green:#00ff88;--red:#ff4444;}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(123,97,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(123,97,255,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
-.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
-.logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
-.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;}
-.logo-text{font-size:22px;font-weight:800;letter-spacing:0.04em;}
-.card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;box-shadow:0 24px 80px rgba(0,0,0,0.4);}
-.card-title{font-size:20px;font-weight:700;margin-bottom:4px;}
-.card-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
-.steps{display:flex;align-items:center;margin-bottom:26px;}
-.step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
-.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;transition:all 0.2s;}
-.step-dot.done{background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;}
-.step-dot.cur{background:rgba(123,97,255,0.15);border:2px solid var(--purple);color:var(--purple);}
-.step-dot.wait{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--muted);}
-.step-label{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
-.step-line{flex:1;height:1px;background:var(--border);margin-bottom:18px;}
-.label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
-.input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px 16px;color:var(--text);font-family:'Syne',sans-serif;font-size:15px;outline:none;transition:border-color 0.2s;margin-bottom:14px;}
-.input:focus{border-color:rgba(123,97,255,0.5);}
-.input::placeholder{color:var(--muted);}
-.input.otp{font-family:'JetBrains Mono',monospace;font-size:26px;letter-spacing:0.25em;text-align:center;}
-.btn{width:100%;padding:14px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;letter-spacing:0.03em;}
-.btn:active{opacity:0.8;}
-.btn:disabled{opacity:0.35;cursor:not-allowed;}
-.btn-primary{background:linear-gradient(135deg,var(--purple),#9b85ff);color:#fff;}
-.btn-github{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);margin-top:10px;}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;font-size:13px;padding:11px;}
-.success-card{text-align:center;padding:10px 0;}
-.success-icon{width:64px;height:64px;border-radius:50%;background:rgba(0,255,136,0.08);border:2px solid rgba(0,255,136,0.3);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;}
-.success-title{font-size:20px;font-weight:700;margin-bottom:6px;}
-.success-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
-.github-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);margin-bottom:10px;}
-.gh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.gh-dot.on{background:var(--green);box-shadow:0 0 8px rgba(0,255,136,0.4);}
-.gh-dot.off{background:var(--muted);}
-.gh-info{flex:1;}
-.gh-label{font-size:13px;font-weight:600;}
-.gh-sub{font-size:11px;color:var(--muted);}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;transition:all 0.25s;z-index:300;white-space:nowrap;opacity:0;}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-.toast.error{border-color:rgba(255,68,68,0.4);color:#ff7070;}
-.toast.success{border-color:rgba(0,255,136,0.3);color:var(--green);}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TeleAgent · Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #0a0a0f;
+      --surface: #14141c;
+      --surface-light: #1c1c26;
+      --primary: #7c3aed;
+      --primary-soft: #a78bfa;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #2a2a3a;
+    }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
+    
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), #a78bfa);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    .logo-text {
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+    
+    .status-badge {
+      background: var(--success);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    
+    /* Connection Cards */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    
+    .connection-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.15s;
+    }
+    
+    .connection-card.connected {
+      border-color: rgba(16, 185, 129, 0.3);
+      background: linear-gradient(145deg, var(--surface), rgba(16, 185, 129, 0.03));
+    }
+    
+    .conn-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .conn-icon.telegram { background: rgba(0, 136, 204, 0.15); color: #2aabee; }
+    .conn-icon.whatsapp { background: rgba(37, 211, 102, 0.15); color: #25d366; }
+    .conn-icon.github { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    
+    .conn-info { flex: 1; }
+    
+    .conn-name {
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .conn-detail {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    
+    .conn-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .status-dot.online { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+    .status-dot.offline { background: var(--text-muted); }
+    .status-dot.warning { background: var(--warning); }
+    
+    .conn-action {
+      flex-shrink: 0;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--surface-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+    
+    .btn:active { opacity: 0.7; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    
+    /* Setup Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+    
+    .modal-overlay.show {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .modal {
+      background: var(--surface);
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 32px;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .modal-overlay.show .modal {
+      transform: translateY(0);
+    }
+    
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface-light);
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      font-size: 16px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.15s;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .input-field::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+    
+    .code-input {
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 8px;
+      font-weight: 600;
+    }
+    
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    
+    .modal-footer .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+    }
+    
+    /* Inbox Selector */
+    .inbox-selector {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .inbox-option {
+      flex: 1;
+      padding: 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .inbox-option.active {
+      border-color: var(--primary);
+      background: rgba(124, 58, 237, 0.08);
+    }
+    
+    .inbox-option .emoji { font-size: 20px; margin-bottom: 4px; }
+    .inbox-option .label { font-size: 12px; font-weight: 500; }
+    
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 20px;
+      right: 20px;
+      max-width: 480px;
+      margin: 0 auto;
+      z-index: 200;
+      pointer-events: none;
+    }
+    
+    .toast {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s;
+      pointer-events: none;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.success { border-left: 4px solid var(--success); }
+    
+    /* Loading spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .flex { display: flex; align-items: center; gap: 8px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="logo">
-    <div class="logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-    <div class="logo-text">TeleAgent</div>
+<div class="app">
+  
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">T</div>
+      <span class="logo-text">TeleAgent</span>
+    </div>
+    <span class="status-badge" id="globalStatus">● Online</span>
   </div>
-
-  <div class="card">
-    <div class="steps">
-      <div class="step"><div class="step-dot cur" id="dot1">1</div><div class="step-label">Phone</div></div>
-      <div class="step-line"></div>
-      <div class="step"><div class="step-dot wait" id="dot2">2</div><div class="step-label">Verify</div></div>
-      <div class="step-line"></div>
-      <div class="step"><div class="step-dot wait" id="dot3">3</div><div class="step-label">Setup</div></div>
-    </div>
-
-    <!-- STEP 1 -->
-    <div id="s1">
-      <div class="card-title">Connect Telegram</div>
-      <div class="card-sub">Enter your phone number to get started. No account needed.</div>
-      <label class="label">Phone Number</label>
-      <input type="tel" class="input" id="phoneInput" placeholder="+2348012345678"/>
-      <button class="btn btn-primary" id="sendBtn" onclick="sendCode()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Send Code
-      </button>
-    </div>
-
-    <!-- STEP 2 -->
-    <div id="s2" style="display:none;">
-      <div class="card-title">Enter Code</div>
-      <div class="card-sub">Check your Telegram app for the verification code.</div>
-      <label class="label">Code</label>
-      <input type="text" class="input otp" id="otpInput" placeholder="12345" maxlength="5"/>
-      <div id="twoFAWrap" style="display:none;">
-        <label class="label">2FA Password</label>
-        <input type="password" class="input" id="twoFAInput" placeholder="Your 2FA password"/>
+  
+  <!-- Connections Dashboard -->
+  <div id="dashboardView">
+    <div class="section-title">Connected Accounts</div>
+    
+    <!-- Telegram Card -->
+    <div class="connection-card" id="telegramCard">
+      <div class="conn-icon telegram">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21.5 4.5L2.5 11.5L9 14.5M21.5 4.5L17.5 20.5L9 14.5M21.5 4.5L9 14.5M9 14.5V20.5L13 17.5"/>
+        </svg>
       </div>
-      <button class="btn btn-primary" id="verifyBtn" onclick="verifyCode()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Verify & Continue
-      </button>
-      <button class="btn btn-ghost" onclick="goStep(1)">← Change Number</button>
-    </div>
-
-    <!-- STEP 3 -->
-    <div id="s3" style="display:none;">
-      <div class="card-title">Setup Your Agent</div>
-      <div class="card-sub">Give your AI a name and tell it what to call you.</div>
-      <label class="label">AI Name (what it responds to)</label>
-      <input type="text" class="input" id="agentName" placeholder="e.g. Maya, Nova, Rex..."/>
-      <label class="label">Your Name (what AI calls you)</label>
-      <input type="text" class="input" id="userName" placeholder="e.g. Boss, Kenny, Chief..."/>
-      <label class="label">Platform Name (optional)</label>
-      <input type="text" class="input" id="platformName" placeholder="e.g. Zaparo, MyApp..."/>
-      <button class="btn btn-primary" id="setupBtn" onclick="finishSetup()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Launch Agent
-      </button>
-    </div>
-
-    <!-- STEP 4: Done -->
-    <div id="s4" style="display:none;">
-      <div class="success-card">
-        <div class="success-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div class="conn-info">
+        <div class="conn-name">
+          Telegram
+          <span class="conn-status">
+            <span class="status-dot" id="tgStatusDot"></span>
+            <span id="tgStatusText">Not connected</span>
+          </span>
         </div>
-        <div class="success-title">Agent is Live! 🔥</div>
-        <div class="success-sub" id="successMsg">Your AI agent is running on Telegram!</div>
-        <div class="github-status">
-          <div class="gh-dot off" id="ghDot"></div>
-          <div class="gh-info">
-            <div class="gh-label" id="ghLabel">GitHub Not Connected</div>
-            <div class="gh-sub" id="ghSub">Connect to create repos & deploy sites</div>
-          </div>
+        <div class="conn-detail" id="tgDetail">Tap to connect</div>
+      </div>
+      <div class="conn-action">
+        <button class="btn" id="tgActionBtn" onclick="showTelegramSetup()">Connect</button>
+      </div>
+    </div>
+    
+    <!-- WhatsApp Card -->
+    <div class="connection-card" id="whatsappCard">
+      <div class="conn-icon whatsapp">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21L4.5 16.5C3.5 14.5 3 12.5 3 10.5C3 5.5 7 1.5 12 1.5C17 1.5 21 5.5 21 10.5C21 15.5 17 19.5 12 19.5C10 19.5 8 19 6.5 18L3 21Z"/>
+          <path d="M9 9H15M9 13H13"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          WhatsApp
+          <span class="conn-status">
+            <span class="status-dot" id="waStatusDot"></span>
+            <span id="waStatusText">Not connected</span>
+          </span>
         </div>
-        <button class="btn btn-github" id="ghBtn" onclick="connectGithub()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-          Connect GitHub
-        </button>
-        <button class="btn btn-ghost" onclick="restart()">Connect Another Number</button>
+        <div class="conn-detail" id="waDetail"></div>
+      </div>
+      <div class="conn-action">
+        <button class="btn" id="waActionBtn" onclick="showWhatsAppSetup()">Connect</button>
+      </div>
+    </div>
+    
+    <!-- GitHub Card -->
+    <div class="connection-card" id="githubCard">
+      <div class="conn-icon github">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+          <path d="M9 18c-4.5 1.5-4.5-2.5-6-3"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          GitHub
+          <span class="conn-status">
+            <span class="status-dot" id="ghStatusDot"></span>
+            <span id="ghStatusText">Not connected</span>
+          </span>
+        </div>
+        <div class="conn-detail" id="ghDetail"></div>
+      </div>
+      <div class="conn-action">
+        <button class="btn" id="ghActionBtn" onclick="connectGithub()">Connect</button>
+      </div>
+    </div>
+    
+    <!-- Inbox Settings (shows when connected) -->
+    <div class="section-title mt-4">Message Routing</div>
+    <div class="connection-card" id="inboxCard" style="display: none;">
+      <div class="conn-info" style="padding-left: 8px;">
+        <div class="conn-name">WhatsApp Inbox</div>
+        <div class="conn-detail" id="inboxDetail">Messages go to Saved Messages</div>
+      </div>
+      <div class="conn-action">
+        <button class="btn btn-outline" onclick="showInboxSelector()">Change</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Empty State (if nothing connected) -->
+  <div id="emptyState" style="display: none; text-align: center; padding: 40px 20px;">
+    <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+    <h3 style="margin-bottom: 8px;">No accounts connected</h3>
+    <p style="color: var(--text-muted); font-size: 14px;">Connect Telegram to get started</p>
+  </div>
+</div>
+
+<!-- Telegram Setup Modal -->
+<div class="modal-overlay" id="telegramModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Connect Telegram</span>
+      <button class="modal-close" onclick="closeModal('telegramModal')">×</button>
+    </div>
+    
+    <div id="tgStep1">
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input type="tel" class="input-field" id="phoneInput" placeholder="+234 801 234 5678" autocomplete="off">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('telegramModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="sendCode()">Send Code</button>
+      </div>
+    </div>
+    
+    <div id="tgStep2" style="display: none;">
+      <div class="input-group">
+        <label class="input-label">Verification Code</label>
+        <input type="text" class="input-field code-input" id="codeInput" placeholder="12345" maxlength="5" autocomplete="off">
+      </div>
+      <div class="input-group" id="twoFAGroup" style="display: none;">
+        <label class="input-label">2FA Password</label>
+        <input type="password" class="input-field" id="twoFAInput" placeholder="Your password" autocomplete="off">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="backToPhone()">Back</button>
+        <button class="btn btn-primary" onclick="verifyCode()">Verify</button>
+      </div>
+    </div>
+    
+    <div id="tgStep3" style="display: none;">
+      <div class="input-group">
+        <label class="input-label">AI Assistant Name</label>
+        <input type="text" class="input-field" id="agentName" placeholder="e.g. Nova, Atlas" value="TeleAgent">
+      </div>
+      <div class="input-group">
+        <label class="input-label">What should AI call you?</label>
+        <input type="text" class="input-field" id="userName" placeholder="e.g. Boss, Chief" value="Boss">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Platform/Business Name (optional)</label>
+        <input type="text" class="input-field" id="platformName" placeholder="e.g. Zaparo">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="finishTelegramSetup()">Launch Agent</button>
       </div>
     </div>
   </div>
 </div>
-<div class="toast" id="toast"></div>
+
+<!-- WhatsApp Setup Modal -->
+<div class="modal-overlay" id="whatsappModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Connect WhatsApp</span>
+      <button class="modal-close" onclick="closeModal('whatsappModal')">×</button>
+    </div>
+    
+    <div id="waStep1">
+      <div class="input-group">
+        <label class="input-label">WhatsApp Phone Number</label>
+        <input type="tel" class="input-field" id="waPhoneInput" placeholder="+234 801 234 5678">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('whatsappModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="requestPairingCode()">Get Pairing Code</button>
+      </div>
+    </div>
+    
+    <div id="waStep2" style="display: none;">
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔑</div>
+        <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; margin-bottom: 8px;" id="pairingCodeDisplay">------</div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+          Open WhatsApp → Settings → Linked Devices → Link a Device<br>
+          Enter this code
+        </p>
+        <div class="spinner" id="waConnectingSpinner" style="margin: 0 auto;"></div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 12px;" id="waConnectingText">Waiting for connection...</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeWhatsAppAndRefresh()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inbox Selector Modal -->
+<div class="modal-overlay" id="inboxModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">WhatsApp Inbox</span>
+      <button class="modal-close" onclick="closeModal('inboxModal')">×</button>
+    </div>
+    
+    <p style="color: var(--text-muted); margin-bottom: 16px;">Choose where WhatsApp messages go</p>
+    
+    <div class="inbox-selector">
+      <div class="inbox-option" id="inboxSaved" onclick="selectInbox('saved')">
+        <div class="emoji">💬</div>
+        <div class="label">Saved Messages</div>
+      </div>
+      <div class="inbox-option" id="inboxGroup" onclick="selectInbox('group')">
+        <div class="emoji">👥</div>
+        <div class="label">Group</div>
+      </div>
+    </div>
+    
+    <div id="groupInputWrapper" style="display: none; margin-top: 16px;">
+      <label class="input-label">Group Username</label>
+      <input type="text" class="input-field" id="groupUsername" placeholder="@mygroup">
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('inboxModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInboxSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container">
+  <div class="toast" id="toast"></div>
+</div>
 
 <script>
 const API = 'https://sample-api-1-ryj7.onrender.com';
-let phoneCodeHash = null, currentPhone = null;
+const BRIDGE_URL = 'https://teleagent-whatsapp.onrender.com';
+
 let token = localStorage.getItem('ta_token');
 let sessionId = localStorage.getItem('ta_session_id');
+let phoneCodeHash = null, currentPhone = null;
+let currentInboxType = 'saved';
+let waStatusCheckInterval = null;
 
-function toast(msg, type='success') {
+// Helpers
+function toast(msg, type = 'success') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = `toast ${type} show`;
-  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3000);
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function goStep(n) {
-  [1,2,3,4].forEach(i => document.getElementById(`s${i}`).style.display = i===n ? 'block' : 'none');
-  [1,2,3].forEach(i => {
-    const dot = document.getElementById(`dot${i}`);
-    if (i < n) { dot.className = 'step-dot done'; dot.textContent = '✓'; }
-    else if (i === n) { dot.className = 'step-dot cur'; dot.textContent = i; }
-    else { dot.className = 'step-dot wait'; dot.textContent = i; }
-  });
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+
+// Load all statuses
+async function loadAllStatus() {
+  if (!token || !sessionId) {
+    updateTelegramUI(null);
+    updateWhatsAppUI(null);
+    updateGitHubUI(null);
+    return;
+  }
+  
+  // Telegram status
+  try {
+    const res = await fetch(`${API}/api/ta/agent/status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    updateTelegramUI(data);
+  } catch (e) {}
+  
+  // WhatsApp status
+  try {
+    const res = await fetch(`${BRIDGE_URL}/status`);
+    const data = await res.json();
+    updateWhatsAppUI(data);
+    
+    // Load inbox config
+    const configRes = await fetch(`${API}/api/ta/whatsapp/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const configData = await configRes.json();
+    if (configData.success) {
+      const target = configData.config.forward_target;
+      const inboxDetail = document.getElementById('inboxDetail');
+      if (target) {
+        inboxDetail.textContent = `Forwarding to ${target}`;
+        currentInboxType = 'group';
+      } else {
+        inboxDetail.textContent = 'Messages go to Saved Messages';
+        currentInboxType = 'saved';
+      }
+      document.getElementById('inboxCard').style.display = data.connected ? 'flex' : 'none';
+    }
+  } catch (e) {}
+  
+  // GitHub status
+  try {
+    const res = await fetch(`${API}/api/ta/github/status`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    updateGitHubUI(data);
+  } catch (e) {}
+}
+
+function updateTelegramUI(data) {
+  const dot = document.getElementById('tgStatusDot');
+  const text = document.getElementById('tgStatusText');
+  const detail = document.getElementById('tgDetail');
+  const btn = document.getElementById('tgActionBtn');
+  const card = document.getElementById('telegramCard');
+  
+  if (data && data.is_running) {
+    dot.className = 'status-dot online';
+    text.textContent = 'Active';
+    detail.textContent = `${data.session.agent_name || 'Agent'} · ${data.session.phone || ''}`;
+    btn.textContent = 'Connected';
+    btn.className = 'btn btn-success';
+    btn.onclick = null;
+    card.classList.add('connected');
+  } else if (data && data.session) {
+    dot.className = 'status-dot warning';
+    text.textContent = 'Inactive';
+    detail.textContent = data.session.phone || 'Tap to start';
+    btn.textContent = 'Start';
+    btn.className = 'btn btn-primary';
+    btn.onclick = () => startAgent();
+  } else {
+    dot.className = 'status-dot offline';
+    text.textContent = 'Not connected';
+    detail.textContent = 'Tap to connect';
+    btn.textContent = 'Connect';
+    btn.className = 'btn';
+    btn.onclick = () => showTelegramSetup();
+    card.classList.remove('connected');
+  }
+}
+
+function updateWhatsAppUI(data) {
+  const dot = document.getElementById('waStatusDot');
+  const text = document.getElementById('waStatusText');
+  const detail = document.getElementById('waDetail');
+  const btn = document.getElementById('waActionBtn');
+  const card = document.getElementById('whatsappCard');
+  
+  if (data && data.connected) {
+    dot.className = 'status-dot online';
+    text.textContent = 'Connected';
+    detail.textContent = 'WhatsApp is active';
+    btn.textContent = 'Connected';
+    btn.className = 'btn btn-success';
+    btn.onclick = () => showWhatsAppStatus();
+    card.classList.add('connected');
+    document.getElementById('inboxCard').style.display = 'flex';
+  } else {
+    dot.className = 'status-dot offline';
+    text.textContent = 'Not connected';
+    detail.textContent = 'Tap to connect';
+    btn.textContent = 'Connect';
+    btn.className = 'btn';
+    btn.onclick = () => showWhatsAppSetup();
+    card.classList.remove('connected');
+    document.getElementById('inboxCard').style.display = 'none';
+  }
+}
+
+function updateGitHubUI(data) {
+  const dot = document.getElementById('ghStatusDot');
+  const text = document.getElementById('ghStatusText');
+  const detail = document.getElementById('ghDetail');
+  const btn = document.getElementById('ghActionBtn');
+  const card = document.getElementById('githubCard');
+  
+  if (data && data.connected) {
+    dot.className = 'status-dot online';
+    text.textContent = 'Connected';
+    detail.textContent = `@${data.username} · ${data.repo_count} repos`;
+    btn.textContent = 'Connected';
+    btn.className = 'btn btn-success';
+    btn.onclick = null;
+    card.classList.add('connected');
+  } else {
+    dot.className = 'status-dot offline';
+    text.textContent = 'Not connected';
+    detail.textContent = 'Connect to deploy sites';
+    btn.textContent = 'Connect';
+    btn.className = 'btn';
+    btn.onclick = () => connectGithub();
+    card.classList.remove('connected');
+  }
+}
+
+// Telegram flow
+function showTelegramSetup() {
+  document.getElementById('tgStep1').style.display = 'block';
+  document.getElementById('tgStep2').style.display = 'none';
+  document.getElementById('tgStep3').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Connect Telegram';
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('codeInput').value = '';
+  showModal('telegramModal');
 }
 
 async function sendCode() {
   const phone = document.getElementById('phoneInput').value.trim();
-  if (!phone) { toast('Enter your phone number', 'error'); return; }
-  const btn = document.getElementById('sendBtn');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  if (!phone) { toast('Enter phone number', 'error'); return; }
+  
   try {
     const res = await fetch(`${API}/api/ta/telegram/send-code`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({phone})
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
     });
     const data = await res.json();
     if (data.success) {
-      phoneCodeHash = data.phone_code_hash; currentPhone = phone;
-      goStep(2); toast('Code sent! Check Telegram ✅');
-    } else toast(data.error || 'Failed', 'error');
-  } catch(e) { toast('Network error', 'error'); }
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Code';
+      phoneCodeHash = data.phone_code_hash;
+      currentPhone = phone;
+      document.getElementById('tgStep1').style.display = 'none';
+      document.getElementById('tgStep2').style.display = 'block';
+      document.getElementById('modalTitle').textContent = 'Enter Code';
+      toast('Code sent to Telegram');
+    } else {
+      toast(data.error || 'Failed', 'error');
+    }
+  } catch (e) {
+    toast('Network error', 'error');
+  }
+}
+
+function backToPhone() {
+  document.getElementById('tgStep1').style.display = 'block';
+  document.getElementById('tgStep2').style.display = 'none';
+  document.getElementById('twoFAGroup').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Connect Telegram';
 }
 
 async function verifyCode() {
-  const code = document.getElementById('otpInput').value.trim();
+  const code = document.getElementById('codeInput').value.trim();
   const twoFA = document.getElementById('twoFAInput').value.trim();
-  if (!code) { toast('Enter the code', 'error'); return; }
-  const btn = document.getElementById('verifyBtn');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  if (!code) { toast('Enter code', 'error'); return; }
+  
   try {
-    const body = {phone: currentPhone, code, phone_code_hash: phoneCodeHash};
+    const body = { phone: currentPhone, code, phone_code_hash: phoneCodeHash };
     if (twoFA) body.password = twoFA;
+    
     const res = await fetch(`${API}/api/ta/telegram/verify`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     const data = await res.json();
+    
     if (data.success) {
-      token = data.token; sessionId = data.session_id;
-      goStep(3); toast(`Welcome ${data.tg_name}! 🎉`);
+      token = data.token;
+      sessionId = data.session_id;
+      localStorage.setItem('ta_token', token);
+      localStorage.setItem('ta_session_id', sessionId);
+      
+      document.getElementById('tgStep2').style.display = 'none';
+      document.getElementById('tgStep3').style.display = 'block';
+      document.getElementById('modalTitle').textContent = 'Setup Your Agent';
+      toast(`Welcome ${data.tg_name}!`);
     } else if (data.error === '2FA_REQUIRED') {
-      document.getElementById('twoFAWrap').style.display = 'block';
-      toast('Enter your 2FA password', 'error');
-    } else toast(data.error || 'Wrong code', 'error');
-  } catch(e) { toast('Network error', 'error'); }
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Verify & Continue';
+      document.getElementById('twoFAGroup').style.display = 'block';
+      toast('Enter 2FA password', 'error');
+    } else {
+      toast(data.error || 'Invalid code', 'error');
+    }
+  } catch (e) {
+    toast('Network error', 'error');
+  }
 }
 
-async function finishSetup() {
-  const agentNickname = document.getElementById('agentName').value.trim() || 'TeleAgent';
-  const userNickname = document.getElementById('userName').value.trim() || 'Boss';
+async function finishTelegramSetup() {
+  const agentName = document.getElementById('agentName').value.trim() || 'TeleAgent';
+  const userName = document.getElementById('userName').value.trim() || 'Boss';
   const platformName = document.getElementById('platformName').value.trim();
-  const btn = document.getElementById('setupBtn');
-  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  
   try {
     await fetch(`${API}/api/ta/agent/settings`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-      body: JSON.stringify({agent_nickname: agentNickname, user_nickname: userNickname, platform_name: platformName})
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        agent_nickname: agentName,
+        user_nickname: userName,
+        platform_name: platformName
+      })
     });
-    localStorage.setItem('ta_token', token);
-    localStorage.setItem('ta_session_id', sessionId);
-    document.getElementById('successMsg').textContent =
-      `${agentNickname} is live! Talk to it on Telegram — it'll call you ${userNickname} 🔥`;
-    goStep(4);
-    loadGithubStatus();
-    toast('Agent launched! 🚀');
-  } catch(e) { toast('Network error', 'error'); }
-  btn.disabled = false;
+    
+    closeModal('telegramModal');
+    loadAllStatus();
+    toast(`${agentName} is live! 🚀`);
+  } catch (e) {
+    toast('Setup failed', 'error');
+  }
 }
 
-async function loadGithubStatus() {
-  if (!token) return;
+async function startAgent() {
   try {
-    const res = await fetch(`${API}/api/ta/github/status`, {headers: {'Authorization': `Bearer ${token}`}});
-    const data = await res.json();
-    if (data.connected) {
-      document.getElementById('ghDot').className = 'gh-dot on';
-      document.getElementById('ghLabel').textContent = `@${data.username}`;
-      document.getElementById('ghSub').textContent = `${data.repo_count} repositories`;
-      const btn = document.getElementById('ghBtn');
-      btn.innerHTML = '✓ GitHub Connected';
-      btn.style.color = 'var(--green)';
-      btn.style.borderColor = 'rgba(0,255,136,0.2)';
-      btn.onclick = null;
-    }
-  } catch(e) {}
+    await fetch(`${API}/api/ta/agent/start`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    loadAllStatus();
+    toast('Agent started');
+  } catch (e) {
+    toast('Failed to start', 'error');
+  }
 }
 
+// WhatsApp flow
+function showWhatsAppSetup() {
+  if (!token) {
+    toast('Connect Telegram first', 'error');
+    return;
+  }
+  document.getElementById('waStep1').style.display = 'block';
+  document.getElementById('waStep2').style.display = 'none';
+  document.getElementById('waPhoneInput').value = '';
+  showModal('whatsappModal');
+}
+
+async function requestPairingCode() {
+  const phone = document.getElementById('waPhoneInput').value.trim();
+  if (!phone) { toast('Enter phone number', 'error'); return; }
+  
+  try {
+    const res = await fetch(`${BRIDGE_URL}/pair`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: phone })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      document.getElementById('waStep1').style.display = 'none';
+      document.getElementById('waStep2').style.display = 'block';
+      document.getElementById('pairingCodeDisplay').textContent = data.code.match(/.{1,4}/g)?.join('-') || data.code;
+      
+      // Start polling for connection
+      waStatusCheckInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`${BRIDGE_URL}/status`);
+          const statusData = await statusRes.json();
+          if (statusData.connected) {
+            clearInterval(waStatusCheckInterval);
+            document.getElementById('waConnectingSpinner').style.display = 'none';
+            document.getElementById('waConnectingText').textContent = 'Connected! ✅';
+            loadAllStatus();
+            toast('WhatsApp connected!');
+          }
+        } catch (e) {}
+      }, 2000);
+    } else {
+      toast(data.error || 'Failed', 'error');
+    }
+  } catch (e) {
+    toast('Bridge error', 'error');
+  }
+}
+
+function closeWhatsAppAndRefresh() {
+  if (waStatusCheckInterval) clearInterval(waStatusCheckInterval);
+  closeModal('whatsappModal');
+  loadAllStatus();
+}
+
+function showWhatsAppStatus() {
+  loadAllStatus();
+  toast('WhatsApp is connected');
+}
+
+// GitHub
 async function connectGithub() {
   if (!token) { toast('Connect Telegram first', 'error'); return; }
   try {
-    const res = await fetch(`${API}/api/ta/github/connect`, {headers: {'Authorization': `Bearer ${token}`}});
+    const res = await fetch(`${API}/api/ta/github/connect`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
-  } catch(e) { toast('Failed', 'error'); }
+  } catch (e) {
+    toast('Failed', 'error');
+  }
 }
 
-function restart() {
-  localStorage.removeItem('ta_token');
-  localStorage.removeItem('ta_session_id');
-  token = null; sessionId = null;
-  document.getElementById('phoneInput').value = '';
-  document.getElementById('otpInput').value = '';
-  document.getElementById('agentName').value = '';
-  document.getElementById('userName').value = '';
-  goStep(1);
+// Inbox settings
+function showInboxSelector() {
+  document.getElementById('inboxSaved').classList.toggle('active', currentInboxType === 'saved');
+  document.getElementById('inboxGroup').classList.toggle('active', currentInboxType === 'group');
+  document.getElementById('groupInputWrapper').style.display = currentInboxType === 'group' ? 'block' : 'none';
+  showModal('inboxModal');
+}
+
+function selectInbox(type) {
+  currentInboxType = type;
+  document.getElementById('inboxSaved').classList.toggle('active', type === 'saved');
+  document.getElementById('inboxGroup').classList.toggle('active', type === 'group');
+  document.getElementById('groupInputWrapper').style.display = type === 'group' ? 'block' : 'none';
+}
+
+async function saveInboxSettings() {
+  const target = currentInboxType === 'group' ? document.getElementById('groupUsername').value.trim() : null;
+  
+  try {
+    await fetch(`${API}/api/ta/whatsapp/config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ forward_target: target || null })
+    });
+    
+    closeModal('inboxModal');
+    loadAllStatus();
+    toast(target ? `Messages go to ${target}` : 'Messages go to Saved Messages');
+  } catch (e) {
+    toast('Failed to save', 'error');
+  }
 }
 
 // Init
@@ -276,15 +1018,11 @@ window.addEventListener('load', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('github') === 'connected') {
     window.history.replaceState({}, '', '/');
-    token = localStorage.getItem('ta_token');
-    if (token) { goStep(4); loadGithubStatus(); toast(`GitHub connected as @${params.get('username')} ✅`); return; }
+    toast(`GitHub connected as @${params.get('username')}`, 'success');
   }
-  if (params.get('error') === 'github_failed') {
-    toast('GitHub connection failed', 'error');
-    window.history.replaceState({}, '', '/');
-  }
-  // Already connected
-  if (token && sessionId) { goStep(4); loadGithubStatus(); }
+  
+  loadAllStatus();
+  setInterval(loadAllStatus, 30000); // Refresh every 30s
 });
 </script>
 </body>
