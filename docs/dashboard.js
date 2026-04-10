@@ -39,11 +39,11 @@ function showModal(id) {
 async function getUserWhatsAppPhone() {
   if (!token) return null;
   try {
-    const res = await fetch(`${API}/api/ta/me`, {
+    const res = await fetch(`${API}/api/ta/whatsapp/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
-    return data.session?.phone || null;
+    return data.whatsapp_phone || null;
   } catch (e) {
     return null;
   }
