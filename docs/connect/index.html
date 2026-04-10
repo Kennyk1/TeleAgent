@@ -918,9 +918,12 @@ async function requestPairingCode() {
   if (!phone) { toast('Enter phone number', 'error'); return; }
   
   try {
-    const res = await fetch(`${BRIDGE_URL}/pair`, {
+    const res = await fetch(`${API}/api/ta/whatsapp/pair`, {  // Flask, not bridge
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`  // send JWT so Flask knows who's pairing
+      },
       body: JSON.stringify({ phone_number: phone })
     });
     const data = await res.json();
