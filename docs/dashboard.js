@@ -8,6 +8,7 @@ let currentInboxType = 'saved';
 let waStatusCheckInterval = null;
 let tgConnected = false;
 let waConnected = false;
+let userWhatsAppPhone = null;
 
 // Loading state
 function showLoading(text = 'Processing...') {
@@ -34,6 +35,20 @@ function showModal(id) {
   document.getElementById(id).classList.add('show');
 }
 
+// Get user's WhatsApp phone from session
+async function getUserWhatsAppPhone() {
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API}/api/ta/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    return data.session?.phone || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Load all statuses
 async function loadAllStatus() {
   if (!token || !sessionId) {
@@ -43,6 +58,10 @@ async function loadAllStatus() {
     return;
   }
   
+  // Get user's WhatsApp phone first
+  userWhatsAppPhone = await getUserWhatsAppPhone();
+  
+  // Telegram status
   try {
     const res = await fetch(`${API}/api/ta/agent/status`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -51,11 +70,25 @@ async function loadAllStatus() {
     updateTelegramUI(data);
   } catch (e) {}
   
+  // WhatsApp status - FIXED for multi-user
   try {
     const res = await fetch(`${BRIDGE_URL}/status`);
     const data = await res.json();
-    updateWhatsAppUI(data);
     
+    let waStatus = { connected: false };
+    
+    if (data.sessions && userWhatsAppPhone) {
+      // Multi-user mode - find this user's session
+      const mySession = data.sessions.find(s => s.phone === userWhatsAppPhone);
+      waStatus = mySession || { connected: false };
+    } else if (data.connected !== undefined) {
+      // Old single-user mode fallback
+      waStatus = data;
+    }
+    
+    updateWhatsAppUI(waStatus);
+    
+    // Load inbox config
     const configRes = await fetch(`${API}/api/ta/whatsapp/config`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -72,8 +105,11 @@ async function loadAllStatus() {
       }
       document.getElementById('inboxCard').style.display = waConnected ? 'flex' : 'none';
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('WhatsApp status error:', e);
+  }
   
+  // GitHub status
   try {
     const res = await fetch(`${API}/api/ta/github/status`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -298,7 +334,7 @@ async function finishTelegramSetup() {
     });
     
     closeModal('telegramModal');
-    loadAllStatus();
+    await loadAllStatus();
     toast(`${agentName} is live! 🚀`);
   } catch (e) {
     toast('Setup failed', 'error');
@@ -313,7 +349,7 @@ async function startAgent() {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    loadAllStatus();
+    await loadAllStatus();
     toast('Agent started');
   } catch (e) {
     toast('Failed to start', 'error');
@@ -328,7 +364,7 @@ async function stopAgent() {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    loadAllStatus();
+    await loadAllStatus();
     toast('Agent stopped');
   } catch (e) {
     toast('Failed to stop', 'error');
@@ -350,7 +386,8 @@ async function disconnectTelegram() {
     token = null;
     sessionId = null;
     tgConnected = false;
-    loadAllStatus();
+    userWhatsAppPhone = null;
+    await loadAllStatus();
     toast('Telegram disconnected');
   } catch (e) {
     toast('Failed to disconnect', 'error');
@@ -391,7 +428,7 @@ async function requestPairingCode() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ phone_number: phone })
+      body: JSON.stringify({ phone_number: phone, phone: phone })
     });
     const data = await res.json();
     
@@ -400,15 +437,30 @@ async function requestPairingCode() {
       document.getElementById('waStep2').style.display = 'block';
       document.getElementById('pairingCodeDisplay').textContent = data.code.match(/.{1,4}/g)?.join('-') || data.code;
       
+      // Store the phone being paired
+      const pairingPhone = phone.replace(/\D/g, '');
+      
+      // Start polling for THIS specific phone's connection
       waStatusCheckInterval = setInterval(async () => {
         try {
           const statusRes = await fetch(`${BRIDGE_URL}/status`);
           const statusData = await statusRes.json();
-          if (statusData.connected) {
+          
+          // Check if THIS phone is connected
+          let isConnected = false;
+          if (statusData.sessions) {
+            const mySession = statusData.sessions.find(s => s.phone === pairingPhone);
+            isConnected = mySession?.connected || false;
+          } else {
+            isConnected = statusData.connected || false;
+          }
+          
+          if (isConnected) {
             clearInterval(waStatusCheckInterval);
             document.getElementById('waConnectingSpinner').style.display = 'none';
             document.getElementById('waConnectingText').textContent = 'Connected! ✅';
-            loadAllStatus();
+            userWhatsAppPhone = pairingPhone;
+            await loadAllStatus();
             toast('WhatsApp connected!');
           }
         } catch (e) {}
@@ -433,13 +485,13 @@ async function disconnectWhatsApp() {
   
   showLoading('Disconnecting WhatsApp...');
   try {
-  
     await fetch(`${API}/api/ta/whatsapp/disconnect`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     waConnected = false;
-    loadAllStatus();
+    userWhatsAppPhone = null;
+    await loadAllStatus();
     toast('WhatsApp disconnected');
   } catch (e) {
     toast('Failed to disconnect', 'error');
@@ -495,7 +547,7 @@ async function saveInboxSettings() {
     });
     
     closeModal('inboxModal');
-    loadAllStatus();
+    await loadAllStatus();
     toast(target ? `Messages go to ${target}` : 'Messages go to Saved Messages');
   } catch (e) {
     toast('Failed to save', 'error');
@@ -504,13 +556,13 @@ async function saveInboxSettings() {
 }
 
 // Init
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('github') === 'connected') {
     window.history.replaceState({}, '', '/');
     toast(`GitHub connected as @${params.get('username')}`, 'success');
   }
   
-  loadAllStatus();
+  await loadAllStatus();
   setInterval(loadAllStatus, 30000);
 });
