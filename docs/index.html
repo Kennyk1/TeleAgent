@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TeleAgent · Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">T</div>
+      <span class="logo-text">TeleAgent</span>
+    </div>
+    <span class="status-badge" id="globalStatus">● Online</span>
+  </div>
+  
+  <!-- Connections Dashboard -->
+  <div id="dashboardView">
+    <div class="section-title">Connected Accounts</div>
+    
+    <!-- Telegram Card -->
+    <div class="connection-card" id="telegramCard">
+      <div class="conn-icon telegram">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21.5 4.5L2.5 11.5L9 14.5M21.5 4.5L17.5 20.5L9 14.5M21.5 4.5L9 14.5M9 14.5V20.5L13 17.5"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          Telegram
+          <span class="conn-status">
+            <span class="status-dot" id="tgStatusDot"></span>
+            <span id="tgStatusText">Not connected</span>
+          </span>
+        </div>
+        <div class="conn-detail" id="tgDetail">Tap to connect</div>
+      </div>
+      <div class="conn-actions">
+        <button class="btn btn-small" id="tgActionBtn" onclick="handleTelegramAction()">Connect</button>
+        <button class="btn btn-small btn-outline" id="tgDisconnectBtn" style="display: none;" onclick="disconnectTelegram()">Disconnect</button>
+      </div>
+    </div>
+    
+    <!-- WhatsApp Card -->
+    <div class="connection-card" id="whatsappCard">
+      <div class="conn-icon whatsapp">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21L4.5 16.5C3.5 14.5 3 12.5 3 10.5C3 5.5 7 1.5 12 1.5C17 1.5 21 5.5 21 10.5C21 15.5 17 19.5 12 19.5C10 19.5 8 19 6.5 18L3 21Z"/>
+          <path d="M9 9H15M9 13H13"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          WhatsApp
+          <span class="conn-status">
+            <span class="status-dot" id="waStatusDot"></span>
+            <span id="waStatusText">Not connected</span>
+          </span>
+        </div>
+        <div class="conn-detail" id="waDetail"></div>
+      </div>
+      <div class="conn-actions">
+        <button class="btn btn-small" id="waActionBtn" onclick="handleWhatsAppAction()">Connect</button>
+        <button class="btn btn-small btn-outline" id="waDisconnectBtn" style="display: none;" onclick="disconnectWhatsApp()">Disconnect</button>
+        <button class="btn btn-small btn-outline" id="waChangeBtn" style="display: none;" onclick="changeWhatsAppNumber()">Change</button>
+      </div>
+    </div>
+    
+    <!-- GitHub Card -->
+    <div class="connection-card" id="githubCard">
+      <div class="conn-icon github">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+          <path d="M9 18c-4.5 1.5-4.5-2.5-6-3"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          GitHub
+          <span class="conn-status">
+            <span class="status-dot" id="ghStatusDot"></span>
+            <span id="ghStatusText">Not connected</span>
+          </span>
+        </div>
+        <div class="conn-detail" id="ghDetail"></div>
+      </div>
+      <div class="conn-actions">
+        <button class="btn btn-small" id="ghActionBtn" onclick="handleGithubAction()">Connect</button>
+      </div>
+    </div>
+    
+    <!-- Inbox Settings -->
+    <div class="section-title mt-4">Message Routing</div>
+    <div class="connection-card" id="inboxCard" style="display: none;">
+      <div class="conn-info" style="padding-left: 8px;">
+        <div class="conn-name">WhatsApp Inbox</div>
+        <div class="conn-detail" id="inboxDetail">Messages go to Saved Messages</div>
+      </div>
+      <div class="conn-actions">
+        <button class="btn btn-small btn-outline" onclick="showInboxSelector()">Change</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+  </div>
+</div>
+
+<!-- Telegram Setup Modal -->
+<div class="modal-overlay" id="telegramModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Connect Telegram</span>
+      <button class="modal-close" onclick="closeModal('telegramModal')">×</button>
+    </div>
+    
+    <div id="tgStep1">
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input type="tel" class="input-field" id="phoneInput" placeholder="+234 801 234 5678" autocomplete="off">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('telegramModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="sendCode()">Send Code</button>
+      </div>
+    </div>
+    
+    <div id="tgStep2" style="display: none;">
+      <div class="input-group">
+        <label class="input-label">Verification Code</label>
+        <input type="text" class="input-field code-input" id="codeInput" placeholder="12345" maxlength="5" autocomplete="off">
+      </div>
+      <div class="input-group" id="twoFAGroup" style="display: none;">
+        <label class="input-label">2FA Password</label>
+        <input type="password" class="input-field" id="twoFAInput" placeholder="Your password" autocomplete="off">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="backToPhone()">Back</button>
+        <button class="btn btn-primary" onclick="verifyCode()">Verify</button>
+      </div>
+    </div>
+    
+    <div id="tgStep3" style="display: none;">
+      <div class="input-group">
+        <label class="input-label">AI Assistant Name</label>
+        <input type="text" class="input-field" id="agentName" placeholder="e.g. Nova, Atlas" value="TeleAgent">
+      </div>
+      <div class="input-group">
+        <label class="input-label">What should AI call you?</label>
+        <input type="text" class="input-field" id="userName" placeholder="e.g. Boss, Chief" value="Boss">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Platform/Business Name (optional)</label>
+        <input type="text" class="input-field" id="platformName" placeholder="e.g. Zaparo">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="finishTelegramSetup()">Launch Agent</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Setup Modal -->
+<div class="modal-overlay" id="whatsappModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="waModalTitle">Connect WhatsApp</span>
+      <button class="modal-close" onclick="closeModal('whatsappModal')">×</button>
+    </div>
+    
+    <div id="waStep1">
+      <div class="input-group">
+        <label class="input-label">WhatsApp Phone Number</label>
+        <input type="tel" class="input-field" id="waPhoneInput" placeholder="+234 801 234 5678">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('whatsappModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="requestPairingCode()">Get Pairing Code</button>
+      </div>
+    </div>
+    
+    <div id="waStep2" style="display: none;">
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔑</div>
+        <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; margin-bottom: 8px;" id="pairingCodeDisplay">------</div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+          Open WhatsApp → Settings → Linked Devices → Link a Device<br>
+          Enter this code
+        </p>
+        <div class="spinner" id="waConnectingSpinner" style="margin: 0 auto; width: 32px; height: 32px; border-width: 3px;"></div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 12px;" id="waConnectingText">Waiting for connection...</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeWhatsAppAndRefresh()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inbox Selector Modal -->
+<div class="modal-overlay" id="inboxModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">WhatsApp Inbox</span>
+      <button class="modal-close" onclick="closeModal('inboxModal')">×</button>
+    </div>
+    
+    <p style="color: var(--text-muted); margin-bottom: 16px;">Choose where WhatsApp messages go</p>
+    
+    <div class="inbox-selector">
+      <div class="inbox-option" id="inboxSaved" onclick="selectInbox('saved')">
+        <div class="emoji">💬</div>
+        <div class="label">Saved Messages</div>
+      </div>
+      <div class="inbox-option" id="inboxGroup" onclick="selectInbox('group')">
+        <div class="emoji">👥</div>
+        <div class="label">Group</div>
+      </div>
+    </div>
+    
+    <div id="groupInputWrapper" style="display: none; margin-top: 16px;">
+      <label class="input-label">Group Username</label>
+      <input type="text" class="input-field" id="groupUsername" placeholder="@mygroup">
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('inboxModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInboxSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container">
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
