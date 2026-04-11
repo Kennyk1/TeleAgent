@@ -105,6 +105,43 @@
         <button class="btn btn-small btn-outline" onclick="showInboxSelector()">Change</button>
       </div>
     </div>
+
+    <!-- Bot Settings Card (NEW) -->
+    <div class="section-title mt-4">Bot Settings</div>
+    <div class="connection-card" id="botCard">
+      <div class="conn-icon" style="background: rgba(0, 136, 204, 0.15); color: #2aabee;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <div class="conn-info">
+        <div class="conn-name">
+          Bot Token
+          <span class="conn-status">
+            <span class="status-dot" id="botStatusDot"></span>
+            <span id="botStatusText">Not configured</span>
+          </span>
+        </div>
+        <div class="conn-detail" id="botDetail">Add a bot token to enable reply buttons</div>
+      </div>
+      <div class="conn-actions">
+        <button class="btn btn-small" id="botActionBtn" onclick="showBotSetup()">Configure</button>
+      </div>
+    </div>
+
+    <!-- Bot Instructions (hidden by default) -->
+    <div id="botInstructions" style="display: none; margin-top: 12px; padding: 16px; background: var(--surface); border-radius: 16px; border: 1px solid var(--border);">
+      <h4 style="margin-bottom: 8px; font-size: 14px;">📋 How to set up your bot:</h4>
+      <ol style="color: var(--text-muted); font-size: 13px; margin-left: 20px; line-height: 1.8;">
+        <li>Go to <a href="https://t.me/BotFather" target="_blank" style="color: var(--primary);">@BotFather</a> on Telegram</li>
+        <li>Send <code style="background: var(--bg); padding: 2px 6px; border-radius: 4px;">/newbot</code></li>
+        <li>Choose a name and username for your bot</li>
+        <li>Copy the token BotFather gives you</li>
+        <li>Paste it below and click Save</li>
+        <li>Add your bot to your Telegram group (if using group inbox)</li>
+      </ol>
+    </div>
   </div>
 </div>
 
@@ -236,6 +273,30 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('inboxModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveInboxSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bot Token Modal (NEW) -->
+<div class="modal-overlay" id="botModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Configure Bot Token</span>
+      <button class="modal-close" onclick="closeModal('botModal')">×</button>
+    </div>
+    
+    <div class="input-group">
+      <label class="input-label">Bot Token (from @BotFather)</label>
+      <input type="password" class="input-field" id="botTokenInput" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" autocomplete="off">
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Token is encrypted and stored securely</p>
+    </div>
+    
+    <div id="botTokenStatus" style="margin-bottom: 16px;"></div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('botModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBotToken()">Save & Connect</button>
+      <button class="btn btn-danger" id="removeBotBtn" onclick="removeBotToken()" style="display: none;">Remove</button>
     </div>
   </div>
 </div>
