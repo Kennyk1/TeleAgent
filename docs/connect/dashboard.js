@@ -9,6 +9,7 @@ let waStatusCheckInterval = null;
 let tgConnected = false;
 let waConnected = false;
 let userWhatsAppPhone = null;
+let botConfigured = false;
 
 // Loading state
 function showLoading(text = 'Processing...') {
@@ -49,6 +50,126 @@ async function getUserWhatsAppPhone() {
   }
 }
 
+// Bot status
+async function loadBotStatus() {
+  if (!token) return;
+  
+  try {
+    const res = await fetch(`${API}/api/ta/whatsapp/config`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    const dot = document.getElementById('botStatusDot');
+    const text = document.getElementById('botStatusText');
+    const detail = document.getElementById('botDetail');
+    const btn = document.getElementById('botActionBtn');
+    
+    if (data.success && data.config.bot_token) {
+      botConfigured = true;
+      dot.className = 'status-dot online';
+      text.textContent = 'Active';
+      detail.textContent = 'Reply buttons enabled';
+      btn.textContent = 'Change';
+    } else {
+      botConfigured = false;
+      dot.className = 'status-dot offline';
+      text.textContent = 'Not configured';
+      detail.textContent = 'Add bot token for reply buttons';
+      btn.textContent = 'Configure';
+    }
+  } catch (e) {
+    console.error('Bot status error:', e);
+  }
+}
+
+function showBotSetup() {
+  document.getElementById('botInstructions').style.display = 'block';
+  document.getElementById('botTokenInput').value = '';
+  document.getElementById('botTokenStatus').innerHTML = '';
+  
+  // Show/hide remove button
+  const removeBtn = document.getElementById('removeBotBtn');
+  removeBtn.style.display = botConfigured ? 'block' : 'none';
+  
+  showModal('botModal');
+}
+
+async function saveBotToken() {
+  const botToken = document.getElementById('botTokenInput').value.trim();
+  if (!botToken) {
+    toast('Enter bot token', 'error');
+    return;
+  }
+  
+  if (!botToken.match(/^\d+:[A-Za-z0-9_-]+$/)) {
+    toast('Invalid bot token format', 'error');
+    return;
+  }
+  
+  showLoading('Connecting bot...');
+  
+  try {
+    const res = await fetch(`${API}/api/ta/agent/settings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ bot_token: botToken })
+    });
+    
+    const data = await res.json();
+    
+    if (data.success) {
+      closeModal('botModal');
+      document.getElementById('botInstructions').style.display = 'none';
+      await loadBotStatus();
+      toast('Bot connected! Reply buttons now enabled ✅');
+      
+      if (currentInboxType === 'group') {
+        setTimeout(() => {
+          toast('⚠️ Dont forget to add your bot to the group!', 'success');
+        }, 2000);
+      }
+    } else {
+      document.getElementById('botTokenStatus').innerHTML = 
+        `<p style="color: var(--danger); font-size: 13px;">❌ ${data.error || 'Failed to connect bot'}</p>`;
+    }
+  } catch (e) {
+    document.getElementById('botTokenStatus').innerHTML = 
+      `<p style="color: var(--danger); font-size: 13px;">❌ Connection error</p>`;
+  }
+  
+  hideLoading();
+}
+
+async function removeBotToken() {
+  if (!confirm('Remove bot token? Reply buttons will stop working.')) return;
+  
+  showLoading('Removing bot...');
+  
+  try {
+    await fetch(`${API}/api/ta/agent/settings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ bot_token: null })
+    });
+    
+    closeModal('botModal');
+    document.getElementById('botInstructions').style.display = 'none';
+    await loadBotStatus();
+    toast('Bot removed');
+  } catch (e) {
+    toast('Failed to remove bot', 'error');
+  }
+  
+  hideLoading();
+}
+
 // Load all statuses
 async function loadAllStatus() {
   if (!token || !sessionId) {
@@ -58,10 +179,8 @@ async function loadAllStatus() {
     return;
   }
   
-  // Get user's WhatsApp phone first
   userWhatsAppPhone = await getUserWhatsAppPhone();
   
-  // Telegram status
   try {
     const res = await fetch(`${API}/api/ta/agent/status`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -70,7 +189,6 @@ async function loadAllStatus() {
     updateTelegramUI(data);
   } catch (e) {}
   
-  // WhatsApp status - FIXED for multi-user
   try {
     const res = await fetch(`${BRIDGE_URL}/status`);
     const data = await res.json();
@@ -78,17 +196,18 @@ async function loadAllStatus() {
     let waStatus = { connected: false };
     
     if (data.sessions && userWhatsAppPhone) {
-      // Multi-user mode - find this user's session
-      const mySession = data.sessions.find(s => s.phone === userWhatsAppPhone);
+      const cleanUserPhone = userWhatsAppPhone.replace(/\D/g, '');
+      const mySession = data.sessions.find(s => {
+        const cleanSessionPhone = s.phone.replace(/\D/g, '');
+        return cleanSessionPhone === cleanUserPhone;
+      });
       waStatus = mySession || { connected: false };
     } else if (data.connected !== undefined) {
-      // Old single-user mode fallback
       waStatus = data;
     }
     
     updateWhatsAppUI(waStatus);
     
-    // Load inbox config
     const configRes = await fetch(`${API}/api/ta/whatsapp/config`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -105,11 +224,8 @@ async function loadAllStatus() {
       }
       document.getElementById('inboxCard').style.display = waConnected ? 'flex' : 'none';
     }
-  } catch (e) {
-    console.error('WhatsApp status error:', e);
-  }
+  } catch (e) {}
   
-  // GitHub status
   try {
     const res = await fetch(`${API}/api/ta/github/status`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -117,6 +233,8 @@ async function loadAllStatus() {
     const data = await res.json();
     updateGitHubUI(data);
   } catch (e) {}
+  
+  await loadBotStatus();
 }
 
 function updateTelegramUI(data) {
@@ -437,16 +555,13 @@ async function requestPairingCode() {
       document.getElementById('waStep2').style.display = 'block';
       document.getElementById('pairingCodeDisplay').textContent = data.code.match(/.{1,4}/g)?.join('-') || data.code;
       
-      // Store the phone being paired
       const pairingPhone = phone.replace(/\D/g, '');
       
-      // Start polling for THIS specific phone's connection
       waStatusCheckInterval = setInterval(async () => {
         try {
           const statusRes = await fetch(`${BRIDGE_URL}/status`);
           const statusData = await statusRes.json();
           
-          // Check if THIS phone is connected
           let isConnected = false;
           if (statusData.sessions) {
             const mySession = statusData.sessions.find(s => s.phone === pairingPhone);
@@ -549,6 +664,12 @@ async function saveInboxSettings() {
     closeModal('inboxModal');
     await loadAllStatus();
     toast(target ? `Messages go to ${target}` : 'Messages go to Saved Messages');
+    
+    if (currentInboxType === 'group' && !botConfigured) {
+      setTimeout(() => {
+        toast('💡 Add a bot token to enable reply buttons in groups!', 'success');
+      }, 1000);
+    }
   } catch (e) {
     toast('Failed to save', 'error');
   }
