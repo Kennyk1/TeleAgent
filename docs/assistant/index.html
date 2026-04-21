@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K // ASSISTANT</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #080809;
+  --bg2:      #0d0d0f;
+  --panel:    #0f0f12;
+  --border:   #1e1e24;
+  --border2:  #2a2a33;
+  --text:     #d4d4dc;
+  --muted:    #4a4a58;
+  --muted2:   #6a6a7a;
+  --green:    #00ff88;
+  --green2:   #00cc6a;
+  --orange:   #ff6b35;
+  --orange2:  #ff8c5a;
+  --red:      #ff3b3b;
+  --blue:     #4da6ff;
+  --cyan:     #00d4ff;
+  --yellow:   #ffd700;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui:   'Syne', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; overflow: hidden; }
+
+/* Scanlines */
+body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.012) 2px, rgba(0,255,136,0.012) 4px); pointer-events: none; z-index: 9999; }
+
+/* ── LOCK ── */
+#lock { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; z-index: 1000; }
+.lock-glyph { font-family: var(--font-ui); font-size: 72px; font-weight: 800; color: transparent; -webkit-text-stroke: 1.5px var(--green); letter-spacing: -4px; line-height: 1; margin-bottom: 8px; animation: glitch 4s infinite; }
+@keyframes glitch { 0%,94%,100%{text-shadow:none;transform:none} 95%{text-shadow:-2px 0 var(--orange),2px 0 var(--cyan);transform:skewX(-1deg)} 96%{text-shadow:2px 0 var(--orange),-2px 0 var(--cyan);transform:skewX(1deg)} 97%{text-shadow:none;transform:none} }
+.lock-tag { font-size: 10px; color: var(--muted2); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 40px; }
+.lock-tag span { color: var(--green); }
+.lock-field { position: relative; width: 300px; margin-bottom: 12px; }
+.lock-field::before { content: '> '; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--green); font-size: 13px; pointer-events: none; }
+#lock-input { width: 100%; background: transparent; border: 1px solid var(--border2); border-radius: 4px; padding: 12px 12px 12px 32px; color: var(--green); font-family: var(--font-mono); font-size: 13px; outline: none; letter-spacing: 2px; transition: border-color 0.2s; }
+#lock-input:focus { border-color: var(--green); box-shadow: 0 0 12px rgba(0,255,136,0.1); }
+#lock-input::placeholder { color: var(--muted); letter-spacing: 1px; }
+#lock-btn { width: 300px; background: transparent; border: 1px solid var(--green); border-radius: 4px; padding: 11px; color: var(--green); font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+#lock-btn::before { content: ''; position: absolute; inset: 0; background: var(--green); transform: translateX(-101%); transition: transform 0.2s; z-index: 0; }
+#lock-btn:hover::before { transform: translateX(0); }
+#lock-btn:hover { color: var(--bg); }
+#lock-btn span { position: relative; z-index: 1; }
+.lock-err { font-size: 11px; color: var(--red); margin-top: 8px; min-height: 16px; letter-spacing: 1px; }
+
+/* ── LAYOUT ── */
+#app { display: flex; height: 100dvh; width: 100%; }
+
+/* ── SIDEBAR ── */
+#sidebar { width: 240px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.25s ease; }
+@media (max-width: 768px) { #sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 500; transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
+.sidebar-top { padding: 16px 14px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-k { font-family: var(--font-ui); font-size: 20px; font-weight: 800; color: var(--green); line-height: 1; }
+.brand-slash { color: var(--muted); font-size: 16px; }
+.brand-name { font-size: 10px; color: var(--muted2); letter-spacing: 2px; text-transform: uppercase; }
+.sb-close { display: none; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+@media (max-width: 768px) { .sb-close { display: flex; } }
+.new-btn { margin: 10px; padding: 9px 12px; background: transparent; border: 1px solid var(--border2); border-radius: 4px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+.new-btn:hover { border-color: var(--green); color: var(--green); }
+.conv-list { flex: 1; overflow-y: auto; padding: 6px; }
+.conv-list::-webkit-scrollbar { width: 3px; }
+.conv-list::-webkit-scrollbar-thumb { background: var(--border2); }
+.conv-section { font-size: 9px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; padding: 10px 8px 5px; }
+.conv-item { padding: 7px 8px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--muted2); transition: all 0.12s; }
+.conv-item:hover { background: var(--border); color: var(--text); }
+.conv-item.active { background: rgba(0,255,136,0.06); color: var(--green); border-left: 2px solid var(--green); }
+.conv-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }
+.conv-star { opacity: 0; transition: opacity 0.1s; font-size: 11px; cursor: pointer; }
+.conv-item:hover .conv-star { opacity: 1; }
+.conv-star.starred { opacity: 1; color: var(--yellow); }
+.sidebar-footer { padding: 10px 14px; border-top: 1px solid var(--border); }
+.gh-status { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 3px; cursor: pointer; transition: all 0.15s; font-size: 10px; color: var(--muted); }
+.gh-status:hover { background: var(--border); }
+.gh-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.gh-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* ── MAIN ── */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+/* ── TOPBAR ── */
+#topbar { height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--border); gap: 10px; flex-shrink: 0; background: var(--bg); }
+.tb-menu { display: none; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+@media (max-width: 768px) { .tb-menu { display: flex; } }
+.tb-title { flex: 1; font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: 0.5px; }
+.tb-model { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); border: 1px solid var(--border); padding: 4px 9px; border-radius: 3px; letter-spacing: 1px; }
+.tb-ping { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.4)} 50%{box-shadow:0 0 0 4px rgba(0,255,136,0)} }
+
+/* ── MESSAGES ── */
+#msgs { flex: 1; overflow-y: auto; padding: 20px 0 12px; scroll-behavior: smooth; }
+#msgs::-webkit-scrollbar { width: 3px; }
+#msgs::-webkit-scrollbar-thumb { background: var(--border2); }
+.msg-wrap { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+.message { margin-bottom: 24px; animation: msgIn 0.18s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* User */
+.message.user { display: flex; justify-content: flex-end; }
+.user-bubble { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px 12px 2px 12px; padding: 11px 15px; max-width: 75%; line-height: 1.65; font-size: 13.5px; color: var(--text); word-break: break-word; }
+.user-bubble.has-file { display: flex; flex-direction: column; gap: 8px; }
+.file-chip { display: flex; align-items: center; gap: 6px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--green); }
+
+/* Assistant */
+.msg-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.avatar { width: 24px; height: 24px; border-radius: 4px; background: transparent; border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-family: var(--font-ui); font-size: 11px; font-weight: 800; color: var(--green); flex-shrink: 0; }
+.msg-label { font-size: 9px; color: var(--green); letter-spacing: 3px; text-transform: uppercase; }
+.msg-time { font-size: 9px; color: var(--muted); margin-left: auto; }
+.msg-body { padding-left: 32px; }
+.typing { display: flex; gap: 4px; align-items: center; padding-left: 32px; height: 22px; }
+.typing span { width: 4px; height: 4px; border-radius: 50%; background: var(--green); opacity: 0.3; animation: td 1.2s infinite; }
+.typing span:nth-child(2){animation-delay:0.15s} .typing span:nth-child(3){animation-delay:0.3s}
+@keyframes td{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+
+/* ── EXEC PANEL ── */
+.exec-panel { margin: 8px 0 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-family: var(--font-mono); }
+.exec-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0,255,136,0.04); border-bottom: 1px solid var(--border); font-size: 10px; color: var(--green); letter-spacing: 2px; text-transform: uppercase; }
+.exec-blink { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1s infinite; margin-left: auto; }
+.exec-blink.done { animation: none; background: var(--muted); }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.exec-steps { padding: 8px 0; }
+.exec-step { display: flex; align-items: flex-start; gap: 10px; padding: 5px 12px; font-size: 11.5px; color: var(--muted2); transition: all 0.2s; }
+.exec-step.active { color: var(--green); }
+.exec-step.done-step { color: var(--muted); }
+.exec-step.err-step { color: var(--red); }
+.step-icon { width: 16px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; }
+.step-spin { width: 12px; height: 12px; border: 1.5px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin{to{transform:rotate(360deg)}}
+.step-text { flex: 1; line-height: 1.5; }
+.step-badge { font-size: 9px; padding: 2px 6px; border-radius: 2px; letter-spacing: 1px; text-transform: uppercase; flex-shrink: 0; }
+.badge-run { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+.badge-ok  { background: rgba(0,204,106,0.08); color: var(--green2); border: 1px solid rgba(0,204,106,0.2); }
+.badge-err { background: rgba(255,59,59,0.08); color: var(--red); border: 1px solid rgba(255,59,59,0.2); }
+.badge-wait{ background: rgba(74,74,88,0.3); color: var(--muted); border: 1px solid var(--border); }
+.exec-log { padding: 6px 12px 10px; border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); max-height: 80px; overflow-y: auto; }
+.log-line { line-height: 1.8; }
+.log-line .ts { color: var(--muted); margin-right: 6px; }
+.log-line .ok { color: var(--green); }
+.log-line .er { color: var(--red); }
+.log-line .info { color: var(--cyan); }
+
+/* ── CODE BLOCKS ── */
+.code-block { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 10px 0; }
+.code-bar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.code-lang { font-size: 10px; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; }
+.code-filename { font-size: 11px; color: var(--muted2); flex: 1; }
+.code-actions { display: flex; gap: 4px; margin-left: auto; }
+.code-btn { background: transparent; border: 1px solid var(--border2); border-radius: 3px; padding: 4px 8px; color: var(--muted2); font-family: var(--font-mono); font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; letter-spacing: 0.5px; }
+.code-btn:hover { border-color: var(--green); color: var(--green); }
+.code-btn.copied { border-color: var(--green); color: var(--green); }
+pre.code-content { padding: 14px 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; color: var(--text); tab-size: 2; }
+pre.code-content::-webkit-scrollbar { height: 3px; }
+pre.code-content::-webkit-scrollbar-thumb { background: var(--border2); }
+.ic { font-family: var(--font-mono); font-size: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; color: var(--orange2); }
+.prose { font-size: 13.5px; line-height: 1.75; color: var(--text); }
+.prose p { margin-bottom: 9px; }
+.prose p:last-child { margin-bottom: 0; }
+.prose strong { color: var(--text); font-weight: 600; }
+.prose em { color: var(--muted2); font-style: italic; }
+
+/* ── EMPTY ── */
+#empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 20px; }
+.empty-ascii { font-family: var(--font-mono); font-size: 10px; color: var(--border2); line-height: 1.3; text-align: center; margin-bottom: 24px; white-space: pre; animation: flicker 6s infinite; }
+@keyframes flicker{0%,97%,100%{opacity:1}98%{opacity:0.4}99%{opacity:1}}
+.empty-prompt { font-size: 11px; color: var(--muted2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+.empty-prompt span { color: var(--green); animation: cursor 1s infinite; }
+@keyframes cursor{0%,100%{opacity:1}50%{opacity:0}}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 520px; }
+.chip { padding: 7px 14px; border: 1px solid var(--border2); border-radius: 3px; font-size: 11px; color: var(--muted2); cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px; }
+.chip:hover { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.04); }
+
+/* ── INPUT ── */
+#input-wrap { padding: 10px 16px 16px; background: var(--bg); flex-shrink: 0; }
+.input-box { max-width: 800px; margin: 0 auto; background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; transition: border-color 0.2s; }
+.input-box:focus-within { border-color: var(--green); box-shadow: 0 0 0 1px rgba(0,255,136,0.08); }
+#paste-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px 0; }
+.paste-chip { display: flex; align-items: center; gap: 6px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-radius: 4px; padding: 4px 8px; font-size: 11px; color: var(--green); }
+.paste-chip-remove { cursor: pointer; color: var(--muted); transition: color 0.1s; background: none; border: none; display: flex; align-items: center; }
+.paste-chip-remove:hover { color: var(--red); }
+.input-row { display: flex; align-items: flex-end; gap: 8px; padding: 10px 10px 10px 14px; }
+#msg-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; resize: none; max-height: 160px; overflow-y: auto; }
+#msg-input::placeholder { color: var(--muted); }
+#send { width: 32px; height: 32px; border-radius: 4px; background: var(--green); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.15s; color: var(--bg); }
+#send:hover { background: var(--green2); transform: scale(1.05); }
+#send:disabled { background: var(--border2); color: var(--muted); cursor: not-allowed; transform: none; }
+.input-footer { max-width: 800px; margin: 6px auto 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.input-footer .sep { color: var(--border2); }
+
+/* ── MODALS ── */
+#gh-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 600; }
+#gh-modal.show { display: flex; }
+.modal-box { background: var(--panel); border: 1px solid var(--border2); border-radius: 8px; width: 380px; max-width: 90vw; overflow: hidden; animation: modalIn 0.2s ease; }
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-hdr { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.modal-hdr-icon { color: var(--green); }
+.modal-title { font-family: var(--font-ui); font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.modal-close { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 3px; transition: color 0.1s; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px 18px; }
+.modal-desc { font-size: 12px; color: var(--muted2); line-height: 1.65; margin-bottom: 18px; }
+.modal-desc span { color: var(--green); }
+.gh-connect-btn { width: 100%; background: transparent; border: 1px solid var(--border2); border-radius: 5px; padding: 12px; color: var(--text); font-family: var(--font-mono); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; letter-spacing: 1px; }
+.gh-connect-btn:hover { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.04); }
+#gh-connected-state { display: none; }
+.connected-badge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-radius: 5px; font-size: 12px; color: var(--green); }
+.modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+.modal-btn-sec { background: none; border: 1px solid var(--border2); border-radius: 4px; padding: 7px 14px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+.modal-btn-sec:hover { border-color: var(--text); color: var(--text); }
+
+#rename-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 700; }
+#rename-modal.show { display: flex; }
+.rename-box { background: var(--panel); border: 1px solid var(--border2); border-radius: 6px; width: 320px; max-width: 90vw; padding: 18px; animation: modalIn 0.15s ease; }
+.rename-label { font-size: 11px; color: var(--muted2); letter-spacing: 1px; margin-bottom: 10px; }
+#rename-input { width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: 4px; padding: 9px 12px; color: var(--text); font-family: var(--font-mono); font-size: 13px; outline: none; margin-bottom: 12px; }
+#rename-input:focus { border-color: var(--green); }
+.rename-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.rbtn { background: none; border: 1px solid var(--border2); border-radius: 3px; padding: 7px 14px; color: var(--muted2); font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+.rbtn:hover { border-color: var(--text); color: var(--text); }
+.rbtn.primary { border-color: var(--green); color: var(--green); }
+.rbtn.primary:hover { background: rgba(0,255,136,0.08); }
+
+#overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 499; display: none; }
+#overlay.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div id="lock">
+  <div class="lock-glyph">K//</div>
+  <div class="lock-tag">PERSONAL <span>ASSISTANT</span> SYSTEM</div>
+  <div class="lock-field">
+    <input id="lock-input" type="password" placeholder="enter access key" autocomplete="off"/>
+  </div>
+  <div class="lock-err" id="lock-err"></div>
+  <button id="lock-btn" onclick="unlock()"><span>// AUTHENTICATE</span></button>
+</div>
+
+<!-- GITHUB MODAL -->
+<div id="gh-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <span class="modal-hdr-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </span>
+      <div class="modal-title">Connect GitHub</div>
+      <button class="modal-close" onclick="closeGhModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc">GitHub is not connected. Connect to allow your assistant to <span>read repos</span>, <span>create files</span>, and <span>deploy pages</span> autonomously.</div>
+      <div id="gh-connect-state">
+        <button class="gh-connect-btn" onclick="connectGitHub()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          Authorize with GitHub
+        </button>
+      </div>
+      <div id="gh-connected-state">
+        <div class="connected-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Connected as <span id="gh-username-badge">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="modal-btn-sec" onclick="closeGhModal()">Close</button></div>
+  </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div id="rename-modal">
+  <div class="rename-box">
+    <div class="rename-label">// RENAME CONVERSATION</div>
+    <input id="rename-input" type="text" placeholder="conversation title..." />
+    <div class="rename-btns">
+      <button class="rbtn" onclick="closeRename()">Cancel</button>
+      <button class="rbtn primary" onclick="confirmRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- APP -->
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <div class="brand-k">K</div>
+        <div class="brand-slash">/</div>
+        <div class="brand-name">Assistant</div>
+      </div>
+      <button class="sb-close" onclick="closeSidebar()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <button class="new-btn" onclick="newChat()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      new_conversation.init()
+    </button>
+    <div class="conv-list" id="conv-list">
+      <div class="conv-section">// recent</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="gh-status" onclick="openGhModal()" id="gh-status-bar">
+        <div class="gh-dot" id="gh-dot"></div>
+        <span id="gh-status-text">github: not connected</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <button class="tb-menu" onclick="openSidebar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="tb-title" id="tb-title">// ASSISTANT</div>
+      <div class="tb-model">
+        <div class="tb-ping"></div>
+        <span>llama-3.3-70b</span>
+      </div>
+    </div>
+
+    <div id="msgs">
+      <div id="empty">
+        <div class="empty-ascii">╔══════════════════════════╗
+║  K E N N Y ' S  S Y S T E M  ║
+║  PERSONAL AI · v1.0.0      ║
+╚══════════════════════════╝</div>
+        <div class="empty-prompt">// ready for input <span>_</span></div>
+        <div class="chips">
+          <div class="chip" onclick="useSuggestion('Review my TeleAgent code for bugs and improvements')">review_teleagent.py</div>
+          <div class="chip" onclick="useSuggestion('Show my GitHub projects and their status')">list_projects()</div>
+          <div class="chip" onclick="useSuggestion('What do you remember about me and my projects?')">memory.read()</div>
+          <div class="chip" onclick="useSuggestion('Create a new Python utility script for me')">create_script.py</div>
+          <div class="chip" onclick="useSuggestion('Help me debug this error')">debug.run()</div>
+          <div class="chip" onclick="useSuggestion('Search and summarize recent AI developments')">research.fetch()</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-wrap">
+      <div class="input-box">
+        <div id="paste-chips"></div>
+        <div class="input-row">
+          <textarea id="msg-input" placeholder="// enter command..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)" onpaste="handlePaste(event)"></textarea>
+          <button id="send" onclick="sendMessage()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="input-footer">
+        <span>shift+enter for newline</span>
+        <span class="sep">·</span>
+        <span>groq / llama-3.3-70b-versatile</span>
+        <span class="sep">·</span>
+        <span style="color:var(--green)">online</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://sample-api-1-ryj7.onrender.com";
+let KEY = "", convId = "conv_" + Date.now(), streaming = false;
+let pasteItems = [], conversations = {}, renameTargetId = null, githubUser = "";
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function unlock() {
+  const k = document.getElementById("lock-input").value.trim();
+  if (!k) return;
+  KEY = k; localStorage.setItem("pa_k", k);
+  document.getElementById("lock").style.display = "none";
+  boot();
+}
+document.getElementById("lock-input").addEventListener("keydown", e => { if(e.key==="Enter") unlock(); });
+window.addEventListener("load", () => { const k=localStorage.getItem("pa_k"); if(k){KEY=k;document.getElementById("lock").style.display="none";boot();} });
+
+// Check github callback
+const _up = new URLSearchParams(location.search);
+if(_up.get("github")==="connected"){githubUser=_up.get("username")||"";localStorage.setItem("gh_user",githubUser);history.replaceState({},"",location.pathname);}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+async function boot() { await checkGitHub(); await loadConvList(); }
+
+// ── GITHUB ────────────────────────────────────────────────────────────────────
+async function checkGitHub() {
+  const saved = localStorage.getItem("gh_user");
+  if (saved) { setGhConnected(saved); return; }
+  try {
+    const r = await fetch(`${API}/api/pa/github/status`, {headers:H()});
+    const d = await r.json();
+    if(d.connected) setGhConnected(d.username); else setGhDisconnected();
+  } catch(e) { setGhDisconnected(); }
+}
+function setGhConnected(user) {
+  githubUser = user;
+  document.getElementById("gh-dot").classList.add("connected");
+  document.getElementById("gh-status-text").textContent = `github: @${user}`;
+  document.getElementById("gh-username-badge").textContent = `@${user}`;
+  document.getElementById("gh-connect-state").style.display = "none";
+  document.getElementById("gh-connected-state").style.display = "block";
+}
+function setGhDisconnected() {
+  document.getElementById("gh-dot").classList.remove("connected");
+  document.getElementById("gh-status-text").textContent = "github: not connected";
+  document.getElementById("gh-connect-state").style.display = "block";
+  document.getElementById("gh-connected-state").style.display = "none";
+}
+async function connectGitHub() {
+  try { const r=await fetch(`${API}/api/pa/github/connect`,{headers:H()}); const d=await r.json(); if(d.url) window.location.href=d.url; } catch(e) {}
+}
+function openGhModal() { document.getElementById("gh-modal").classList.add("show"); }
+function closeGhModal() { document.getElementById("gh-modal").classList.remove("show"); }
+
+// ── CONVERSATIONS ─────────────────────────────────────────────────────────────
+async function loadConvList() {
+  try {
+    const r = await fetch(`${API}/api/pa/conversations`,{headers:H()});
+    const d = await r.json();
+    conversations = JSON.parse(localStorage.getItem("pa_convs")||"{}");
+    renderConvList(d.conversations||[]);
+  } catch(e) {}
+}
+function renderConvList(list) {
+  const el = document.getElementById("conv-list");
+  el.innerHTML = "";
+  const starred = list.filter(c=>conversations[c.id]?.starred);
+  const normal  = list.filter(c=>!conversations[c.id]?.starred);
+  if(starred.length){ el.innerHTML+='<div class="conv-section">// starred</div>'; starred.forEach(c=>el.appendChild(makeConvItem(c))); el.innerHTML+='<div class="conv-section">// recent</div>'; }
+  else { el.innerHTML+='<div class="conv-section">// recent</div>'; }
+  normal.forEach(c=>el.appendChild(makeConvItem(c)));
+}
+function makeConvItem(c) {
+  const meta = conversations[c.id]||{};
+  const title = meta.title||c.title||"conversation";
+  const div = document.createElement("div");
+  div.className = "conv-item"+(c.id===convId?" active":"");
+  div.dataset.id = c.id;
+  div.innerHTML = `<span class="conv-title">${escH(title.substring(0,26))}</span><span class="conv-star ${meta.starred?"starred":""}" onclick="toggleStar(event,'${c.id}')">★</span>`;
+  div.addEventListener("click", ()=>switchConv(c.id));
+  div.addEventListener("dblclick", ()=>openRename(c.id,title));
+  return div;
+}
+function toggleStar(e,id){ e.stopPropagation(); conversations[id]=conversations[id]||{}; conversations[id].starred=!conversations[id].starred; saveConvMeta(); loadConvList(); }
+function openRename(id,cur){ renameTargetId=id; document.getElementById("rename-input").value=cur; document.getElementById("rename-modal").classList.add("show"); setTimeout(()=>document.getElementById("rename-input").focus(),100); }
+function closeRename(){ document.getElementById("rename-modal").classList.remove("show"); renameTargetId=null; }
+function confirmRename(){ if(!renameTargetId) return; const v=document.getElementById("rename-input").value.trim(); if(!v) return; conversations[renameTargetId]=conversations[renameTargetId]||{}; conversations[renameTargetId].title=v; saveConvMeta(); closeRename(); loadConvList(); }
+document.getElementById("rename-input").addEventListener("keydown",e=>{if(e.key==="Enter")confirmRename();if(e.key==="Escape")closeRename();});
+function saveConvMeta(){ localStorage.setItem("pa_convs",JSON.stringify(conversations)); }
+async function switchConv(id){ convId=id; clearMsgs(); await loadHistory(); closeSidebar(); document.querySelectorAll(".conv-item").forEach(x=>x.classList.toggle("active",x.dataset.id===id)); const m=conversations[id]; document.getElementById("tb-title").textContent=m?.title?`// ${m.title.substring(0,28)}`:"// ASSISTANT"; }
+function newChat(){ convId="conv_"+Date.now(); clearMsgs(); showEmpty(); document.querySelectorAll(".conv-item").forEach(x=>x.classList.remove("active")); document.getElementById("tb-title").textContent="// ASSISTANT"; closeSidebar(); }
+async function loadHistory(){ try{ const r=await fetch(`${API}/api/pa/chat/history?conv_id=${convId}`,{headers:H()}); const d=await r.json(); if(d.messages?.length){hideEmpty();d.messages.forEach(m=>appendMsg(m.role,m.content,false));} }catch(e){} }
+
+// ── SEND ──────────────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById("msg-input");
+  let text = input.value.trim();
+  let fullMsg = text;
+  if(pasteItems.length>0){ const blocks=pasteItems.map(p=>`\`\`\`\n// FILE: ${p.name}\n${p.content}\n\`\`\``).join("\n\n"); fullMsg=blocks+(text?"\n\n"+text:""); }
+  if(!fullMsg||streaming) return;
+
+  hideEmpty();
+  appendMsg("user",text||pasteItems.map(p=>p.name).join(", "),false,pasteItems.length>0?[...pasteItems]:null);
+  input.value=""; autoResize(input); clearPasteChips();
+
+  const aMsg = appendMsg("assistant","",true);
+  const bodyEl = aMsg.querySelector(".msg-body");
+  streaming=true; setSend(false);
+
+  // GitHub check
+  if((fullMsg.toLowerCase().includes("github")||fullMsg.toLowerCase().includes("repo"))&&!githubUser){
+    await sleep(500);
+    removeTyping(aMsg);
+    bodyEl.innerHTML=`<div class="prose"><p>GitHub isn't connected — opening connection panel...</p></div>`;
+    setTimeout(()=>openGhModal(),700);
+    streaming=false; setSend(true); return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/pa/chat/stream`,{method:"POST",headers:{...H(),"Content-Type":"application/json"},body:JSON.stringify({message:fullMsg,conv_id:convId})});
+    const reader=res.body.getReader(), dec=new TextDecoder();
+    let buf="",full="",typing=aMsg.querySelector(".typing"),proseEl=null,execPanel=null;
+
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split("\n"); buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith("data: ")) continue;
+        const raw=line.slice(6).trim(); if(!raw||raw==="[DONE]") continue;
+        try{
+          const ev=JSON.parse(raw);
+          if(ev.type==="token"){
+            if(typing){typing.remove();typing=null;}
+            full+=ev.token;
+            if(!proseEl){proseEl=document.createElement("div");proseEl.className="prose";bodyEl.appendChild(proseEl);}
+            proseEl.innerHTML=renderMd(full); scrollBot();
+          }
+          if(ev.type==="done"){
+            if(typing){typing.remove();typing=null;}
+            if(proseEl) proseEl.innerHTML=renderMd(ev.full_response||full);
+            if(ev.actions?.length){ execPanel=buildExecPanel(bodyEl,ev.actions); }
+            scrollBot(); updateConvTitle(convId,(text||fullMsg).substring(0,40)); await loadConvList();
+          }
+          if(ev.type==="job_started"){ pollJob(ev.job_id,execPanel); }
+          if(ev.type==="error"){ if(typing)typing.remove(); bodyEl.innerHTML=`<div class="prose"><p style="color:var(--red)">// error: ${ev.message}</p></div>`; }
+        }catch(e){}
+      }
+    }
+  }catch(e){ removeTyping(aMsg); bodyEl.innerHTML=`<div class="prose"><p style="color:var(--red)">// connection_error: backend unreachable</p></div>`; }
+
+  streaming=false; setSend(true);
+}
+
+// ── EXEC PANEL ────────────────────────────────────────────────────────────────
+const ACTION_META = {
+  read_repo:      {icon:"📂",label:"Reading repository",    steps:["Authenticating with GitHub","Fetching file tree","Reading source files","Indexing contents"]},
+  create_repo:    {icon:"⚡",label:"Creating repository",   steps:["Validating repo name","Sending create request","Initializing main branch","Repository ready"]},
+  create_files:   {icon:"📝",label:"Writing files",         steps:["Preparing file contents","Encoding payloads","Pushing to GitHub","Verifying commits"]},
+  deploy_pages:   {icon:"🚀",label:"Deploying to Pages",    steps:["Enabling GitHub Pages","Configuring branch source","Publishing live site","Deployment complete"]},
+  remember:       {icon:"🧠",label:"Saving to memory",      steps:["Encoding memory entry","Writing to store"]},
+  update_library: {icon:"📚",label:"Updating knowledge",    steps:["Processing new knowledge","Merging into library"]},
+};
+
+function buildExecPanel(container, actions) {
+  const panel = document.createElement("div");
+  panel.className = "exec-panel";
+  panel.style.marginTop = "12px";
+  const blinkId = "eb_"+Date.now();
+  panel.innerHTML = `
+    <div class="exec-header">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      executing_tasks [ ${actions.length} ]
+      <div class="exec-blink" id="${blinkId}"></div>
+    </div>
+    <div class="exec-steps" id="sc_${blinkId}"></div>
+    <div class="exec-log" id="log_${blinkId}"></div>`;
+  container.appendChild(panel);
+
+  const stepsC = panel.querySelector(`#sc_${blinkId}`);
+  const logC   = panel.querySelector(`#log_${blinkId}`);
+  appendLog(logC,"info","initializing task queue...");
+
+  actions.forEach((action, ai) => {
+    const meta = ACTION_META[action.type]||{icon:"⚙️",label:action.type,steps:["Processing..."]};
+    const hdrId = `hdr_${blinkId}_${ai}`;
+    const hdr = document.createElement("div");
+    hdr.className = "exec-step active"; hdr.id = hdrId;
+    const target = action.repo||action.name||"";
+    hdr.innerHTML = `
+      <div class="step-icon"><div class="step-spin"></div></div>
+      <div class="step-text">${meta.icon} ${meta.label}${target?` <span style="color:var(--cyan)">→ ${escH(target)}</span>`:""}</div>
+      <span class="step-badge badge-run">RUNNING</span>`;
+    stepsC.appendChild(hdr);
+
+    meta.steps.forEach((s,si) => {
+      const sub = document.createElement("div");
+      sub.className = "exec-step"; sub.id = `sub_${blinkId}_${ai}_${si}`;
+      sub.innerHTML = `<div class="step-icon" style="color:var(--muted);font-size:10px">└─</div><div class="step-text" style="color:var(--muted)">${s}</div><span class="step-badge badge-wait">WAIT</span>`;
+      stepsC.appendChild(sub);
+      setTimeout(()=>{
+        sub.querySelector(".step-badge").className="step-badge badge-run";
+        sub.querySelector(".step-text").style.color="var(--green)";
+        sub.className="exec-step active";
+        appendLog(logC,"info",s); scrollBot();
+      }, ai*3200 + si*700 + 500);
+    });
+  });
+
+  return { panel, logC, blinkId, actions };
+}
+
+function finishExecPanel(pd, results) {
+  if(!pd) return;
+  const blink = document.getElementById(pd.blinkId);
+  if(blink) blink.classList.add("done");
+  results.forEach((r,i)=>{
+    const hdr = document.getElementById(`hdr_${pd.blinkId}_${i}`);
+    if(!hdr) return;
+    const ok = r.status==="success";
+    hdr.className=`exec-step ${ok?"done-step":"err-step"}`;
+    hdr.querySelector(".step-spin").outerHTML = ok
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+    hdr.querySelector(".step-badge").className=ok?"step-badge badge-ok":"step-badge badge-err";
+    hdr.querySelector(".step-badge").textContent=ok?"DONE":"ERROR";
+    const meta=ACTION_META[pd.actions[i]?.type]||{steps:[]};
+    meta.steps.forEach((_,si)=>{
+      const sub=document.getElementById(`sub_${pd.blinkId}_${i}_${si}`);
+      if(sub){sub.querySelector(".step-badge").className=ok?"step-badge badge-ok":"step-badge badge-err";sub.querySelector(".step-badge").textContent=ok?"✓":"✗";}
+    });
+    if(ok) appendLog(pd.logC,"ok",`${pd.actions[i]?.type} completed`);
+    else appendLog(pd.logC,"err",r.message||"action failed");
+    if(r.url) appendLog(pd.logC,"info",`→ ${r.url}`);
+    if(r.repo_url) appendLog(pd.logC,"info",`→ ${r.repo_url}`);
+  });
+  appendLog(pd.logC,"ok","all tasks complete"); scrollBot();
+}
+
+function appendLog(c,type,msg){ const ts=new Date().toLocaleTimeString("en-US",{hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"}); const d=document.createElement("div"); d.className="log-line"; d.innerHTML=`<span class="ts">${ts}</span><span class="${type==="ok"?"ok":type==="err"?"er":"info"}">${type==="ok"?"✓":type==="err"?"✗":"›"} ${escH(msg)}</span>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
+
+async function pollJob(jobId,pd){
+  for(let i=0;i<40;i++){
+    await sleep(1500);
+    try{ const r=await fetch(`${API}/api/pa/job/${jobId}`,{headers:H()}); const d=await r.json(); if(d.status==="done"){finishExecPanel(pd,d.results);break;} }catch(e){}
+  }
+}
+
+// ── DOM HELPERS ───────────────────────────────────────────────────────────────
+function appendMsg(role,text,withTyping=false,files=null){
+  let wrap=document.querySelector(".msg-wrap");
+  if(!wrap){wrap=document.createElement("div");wrap.className="msg-wrap";document.getElementById("msgs").appendChild(wrap);}
+  const msg=document.createElement("div"); msg.className=`message ${role}`;
+  if(role==="user"){
+    const hasFiles=files&&files.length>0;
+    msg.innerHTML=`<div class="user-bubble${hasFiles?" has-file":""}">
+      ${hasFiles?files.map(f=>`<div class="file-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${escH(f.name)}</div>`).join(""):""}
+      ${text?`<span>${escH(text)}</span>`:""}
+    </div>`;
+  } else {
+    const ts=new Date().toLocaleTimeString("en-US",{hour12:false,hour:"2-digit",minute:"2-digit"});
+    msg.innerHTML=`
+      <div class="msg-hdr"><div class="avatar">K</div><div class="msg-label">assistant</div><div class="msg-time">${ts}</div></div>
+      ${withTyping?'<div class="typing"><span></span><span></span><span></span></div>':""}
+      <div class="msg-body">${text?`<div class="prose">${renderMd(text)}</div>`:""}</div>`;
+  }
+  wrap.appendChild(msg); scrollBot(); return msg;
+}
+function removeTyping(m){ const t=m.querySelector(".typing"); if(t) t.remove(); }
+
+// ── MARKDOWN ──────────────────────────────────────────────────────────────────
+function renderMd(text){
+  if(!text) return "";
+  let out=text;
+  // Code blocks
+  out=out.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,lang,code)=>{
+    const t=code.trim(), id="cb_"+Math.random().toString(36).slice(2,8);
+    const fname=detectFilename(t,lang);
+    return `<div class="code-block">
+      <div class="code-bar">
+        <span class="code-lang">${lang||"code"}</span>
+        ${fname?`<span class="code-filename">${escH(fname)}</span>`:""}
+        <div class="code-actions">
+          <button class="code-btn" onclick="copyCode('${id}',this)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> copy
+          </button>
+          <button class="code-btn" onclick="dlCode('${id}','${escH(fname||(lang?`file.${lang}`:"file.txt"))}')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> save
+          </button>
+        </div>
+      </div>
+      <pre class="code-content" id="${id}">${escH(t)}</pre>
+    </div>`;
+  });
+  out=out.replace(/`([^`\n]+)`/g,'<span class="ic">$1</span>');
+  out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  out=out.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  out=out.split(/\n\n+/).map(p=>`<p>${p.replace(/\n/g,"<br>")}</p>`).join("");
+  return out;
+}
+function detectFilename(code,lang){
+  const m=code.match(/^(?:\/\/|#)\s*(?:FILE:\s*)?([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)/m);
+  return m?m[1]:null;
+}
+function copyCode(id,btn){
+  const el=document.getElementById(id); if(!el) return;
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    btn.classList.add("copied");
+    btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> copied`;
+    setTimeout(()=>{btn.classList.remove("copied");btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> copy`;},2000);
+  });
+}
+function dlCode(id,filename){
+  const el=document.getElementById(id); if(!el) return;
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([el.textContent],{type:"text/plain"})); a.download=filename; a.click();
+}
+
+// ── PASTE ─────────────────────────────────────────────────────────────────────
+function handlePaste(e){
+  const t=e.clipboardData.getData("text/plain");
+  if(t&&t.length>300){ e.preventDefault(); const name=`paste_${pasteItems.length+1}.txt`; pasteItems.push({id:Date.now(),name,content:t}); renderPasteChips(); }
+}
+function renderPasteChips(){
+  document.getElementById("paste-chips").innerHTML=pasteItems.map(p=>`
+    <div class="paste-chip">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      ${escH(p.name)} (${(p.content.length/1000).toFixed(1)}kb)
+      <button class="paste-chip-remove" onclick="removePaste(${p.id})">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>`).join("");
+}
+function removePaste(id){ pasteItems=pasteItems.filter(p=>p.id!==id); renderPasteChips(); }
+function clearPasteChips(){ pasteItems=[]; document.getElementById("paste-chips").innerHTML=""; }
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function H(){ return {"X-Personal-Key":KEY}; }
+function escH(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function scrollBot(){ const m=document.getElementById("msgs"); m.scrollTop=m.scrollHeight; }
+function setSend(e){ document.getElementById("send").disabled=!e; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function clearMsgs(){ document.getElementById("msgs").innerHTML=""; }
+function updateConvTitle(id,t){ conversations[id]=conversations[id]||{}; if(!conversations[id].title) conversations[id].title=t; saveConvMeta(); }
+function autoResize(el){ el.style.height="auto"; el.style.height=Math.min(el.scrollHeight,160)+"px"; }
+function handleKey(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function useSuggestion(t){ document.getElementById("msg-input").value=t; sendMessage(); }
+function openSidebar(){ document.getElementById("sidebar").classList.add("open"); document.getElementById("overlay").classList.add("show"); }
+function closeSidebar(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); }
+function showEmpty(){
+  document.getElementById("msgs").innerHTML=`<div id="empty"><div class="empty-ascii">╔══════════════════════════╗\n║  K E N N Y ' S  S Y S T E M  ║\n║  PERSONAL AI · v1.0.0      ║\n╚══════════════════════════╝</div><div class="empty-prompt">// ready for input <span>_</span></div><div class="chips"><div class="chip" onclick="useSuggestion('Review my TeleAgent code for bugs and improvements')">review_teleagent.py</div><div class="chip" onclick="useSuggestion('Show my GitHub projects and their status')">list_projects()</div><div class="chip" onclick="useSuggestion('What do you remember about me and my projects?')">memory.read()</div><div class="chip" onclick="useSuggestion('Create a new Python utility script for me')">create_script.py</div></div></div>`;
+}
+function hideEmpty(){ const e=document.getElementById("empty"); if(e) e.remove(); }
+</script>
+</body>
+</html>
